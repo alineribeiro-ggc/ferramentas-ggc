@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rentabilidade de Orçamento — Grupo Global Care</title>
+<style>
+:root{
+  --beige:#f5f5dc;
+  --beige-dark:#e8e6c8;
+  --black:#111;
+  --white:#fff;
+  --red:#e41f1b;
+  --red-dark:#c0392b;
+  --red-bg:#fdeceb;
+  --green:#1e7d34;
+  --green-bg:#e8f5e9;
+  --yellow:#a35b00;
+  --yellow-bg:#fff3e0;
+  --grey:#666;
+  --grey-light:#ddd;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Helvetica,Arial,sans-serif;background:#f0f0ee;color:var(--black);min-height:100vh}
+
+/* ===== TOP BAR ===== */
+.topbar{background:var(--beige);border-bottom:2px solid var(--black);padding:14px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.topbar .logo{height:42px;object-fit:contain}
+.topbar h1{font-size:18px;font-weight:700;color:var(--black);flex:1;letter-spacing:.2px}
+.topbar .nav-links{display:flex;gap:10px;flex-wrap:wrap}
+.topbar .nav-links a{font-size:13px;color:var(--black);text-decoration:none;padding:7px 14px;border:1.5px solid var(--black);border-radius:20px;background:var(--white);font-weight:600;transition:.15s}
+.topbar .nav-links a:hover{background:var(--red);color:var(--white);border-color:var(--red)}
+
+/* ===== MAIN ===== */
+.main{max-width:1240px;margin:24px auto 60px;padding:0 20px}
+.card{background:var(--white);border:1.5px solid #ccc;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:28px;margin-bottom:24px}
+.card h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.card .subtitle{font-size:14px;color:var(--grey);margin-bottom:20px;line-height:1.5}
+
+/* ===== UPLOAD ===== */
+.upload-zone{border:2.5px dashed var(--black);border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:.2s;background:#fafaf6}
+.upload-zone:hover,.upload-zone.drag-over{background:var(--beige);border-color:var(--red)}
+.upload-zone .arrow{font-size:34px;margin-bottom:10px}
+.upload-zone p{font-size:15px}
+.upload-zone small{font-size:12px;color:var(--grey);margin-top:6px;display:block}
+
+.file-chip{display:inline-flex;align-items:center;gap:10px;background:var(--beige);border:1.5px solid var(--black);border-radius:20px;padding:8px 16px;margin-top:14px;font-size:13px;font-weight:600}
+.file-chip button{border:none;background:none;cursor:pointer;font-size:14px;font-weight:700;color:var(--red)}
+
+.processing{text-align:center;padding:36px}
+.processing .spinner{width:38px;height:38px;border:4px solid var(--grey-light);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.error-box{background:var(--red-bg);border:1.5px solid var(--red);border-radius:8px;padding:14px 18px;margin-top:16px;color:var(--red-dark);font-size:13px;line-height:1.6}
+.error-box strong{color:var(--red)}
+
+/* ===== PATIENT HEADER ===== */
+.patient-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:8px}
+.patient-header h2{font-size:20px}
+.patient-meta{font-size:13px;color:var(--grey);margin-top:4px;line-height:1.6}
+.patient-meta b{color:var(--black)}
+.badge-orcamento{background:var(--black);color:var(--white);font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;white-space:nowrap}
+
+/* ===== KPI CARDS ===== */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+.kpi-card{border:1.5px solid var(--black);border-radius:10px;padding:16px 18px;background:var(--white)}
+.kpi-card .kpi-label{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--grey);font-weight:700;margin-bottom:6px}
+.kpi-card .kpi-value{font-size:22px;font-weight:700}
+.kpi-card .kpi-sub{font-size:13px;color:var(--grey);margin-top:2px}
+.kpi-card.kpi-neutral{background:var(--beige)}
+.kpi-card.kpi-green{background:var(--green-bg);border-color:var(--green)}
+.kpi-card.kpi-green .kpi-value{color:var(--green)}
+.kpi-card.kpi-yellow{background:var(--yellow-bg);border-color:var(--yellow)}
+.kpi-card.kpi-yellow .kpi-value{color:var(--yellow)}
+.kpi-card.kpi-red{background:var(--red-bg);border-color:var(--red)}
+.kpi-card.kpi-red .kpi-value{color:var(--red)}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.kpi-row{grid-template-columns:1fr}}
+
+/* ===== TABLES ===== */
+.tbl-wrap{overflow-x:auto;margin-bottom:10px;border:1px solid #ccc;border-radius:8px}
+table.data{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+table.data th{background:var(--beige);padding:9px 10px;text-align:left;font-weight:700;color:var(--black);border-bottom:2px solid var(--black);white-space:nowrap;position:sticky;top:0}
+table.data th.sortable{cursor:pointer;user-select:none}
+table.data th.sortable:hover{background:var(--beige-dark)}
+table.data th .arrow{font-size:10px;margin-left:3px;opacity:.6}
+table.data td{padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top;white-space:nowrap}
+table.data td.wrap{white-space:normal;min-width:220px}
+table.data tr:hover td{background:#fafafa}
+table.data .num{text-align:right;font-variant-numeric:tabular-nums}
+table.data .code{font-family:'Consolas','Courier New',monospace;font-size:11.5px;color:#555}
+tr.row-neg td{background:var(--red-bg) !important}
+tr.row-alert td{background:var(--yellow-bg) !important}
+tr.row-warn td{outline:1px dashed var(--red)}
+.section-title{font-size:14px;font-weight:700;margin:22px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--black);display:flex;align-items:center;gap:10px}
+.section-title .tag{font-size:11px;background:var(--beige);border:1px solid var(--black);border-radius:12px;padding:2px 10px;font-weight:600}
+
+/* ===== CATEGORY BREAKDOWN ROW COLORS ===== */
+tr.cat-green td{background:var(--green-bg)}
+tr.cat-yellow td{background:var(--yellow-bg)}
+tr.cat-red td{background:var(--red-bg)}
+
+/* ===== FILTER PILLS ===== */
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filter-bar .count{font-size:12px;color:var(--grey);margin-left:6px}
+.pill{padding:6px 16px;border-radius:20px;font-size:13px;border:1.5px solid var(--black);background:var(--white);cursor:pointer;transition:.15s;font-weight:600}
+.pill:hover{background:var(--beige)}
+.pill.active{background:var(--black);color:var(--white)}
+.pill.active.f-neg{background:var(--red);border-color:var(--red)}
+.pill.active.f-alert{background:var(--yellow);border-color:var(--yellow)}
+.pill.active.f-pos{background:var(--green);border-color:var(--green)}
+
+/* ===== ANALYSIS ===== */
+.analysis-box{background:#fafaf6;border:1.5px solid var(--black);border-radius:10px;padding:18px 22px;font-size:13.5px;line-height:1.85}
+.analysis-box h3{font-size:14px;margin:14px 0 6px;color:var(--black)}
+.analysis-box h3:first-child{margin-top:0}
+.analysis-box ul{margin:4px 0 4px 20px}
+.analysis-box li{margin-bottom:4px}
+.analysis-box .verdict{display:inline-block;font-weight:800;padding:4px 12px;border-radius:6px;font-size:13px;margin-bottom:8px}
+.verdict.ok{background:var(--green-bg);color:var(--green)}
+.verdict.bad{background:var(--red-bg);color:var(--red)}
+.analysis-box .neg-item{color:var(--red-dark);font-weight:600}
+.analysis-box .highlight{background:var(--beige);padding:1px 5px;border-radius:4px;font-weight:700}
+
+/* ===== ACTIONS ===== */
+.actions{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+.btn{padding:12px 26px;border:1.5px solid var(--black);border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:8px;background:var(--white);color:var(--black)}
+.btn:hover{background:var(--black);color:var(--white)}
+.btn-primary{background:var(--black);color:var(--white)}
+.btn-primary:hover{background:var(--red);border-color:var(--red)}
+.btn-primary:disabled{background:#ccc;border-color:#ccc;cursor:not-allowed}
+.btn-secondary{background:var(--white)}
+
+/* ===== DEBUG PANEL ===== */
+.debug-toggle{font-size:12px;color:var(--grey);cursor:pointer;text-decoration:underline;margin-top:10px;display:inline-block}
+.debug-panel{display:none;margin-top:12px;background:#111;color:#0f0;font-family:Consolas,monospace;font-size:11px;padding:14px;border-radius:8px;max-height:320px;overflow:auto;white-space:pre-wrap}
+.debug-panel.open{display:block}
+.warn-list{font-size:12px;color:var(--yellow);margin-top:8px}
+
+@media(max-width:768px){
+  .topbar{padding:12px 16px}
+  .topbar h1{font-size:15px}
+  .main{padding:0 12px;margin:16px auto}
+  .card{padding:18px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <img src="logo1.png" alt="Grupo Global Care" class="logo" onerror="this.style.display='none'">
+  <h1>Análise de Rentabilidade de Orçamento</h1>
+  <nav class="nav-links">
+    <a href="index.html">← Central Comercial</a>
+    <a href="bradesco_2026.html">Corretor Bradesco</a>
+  </nav>
+</header>
+
+<div class="main">
+
+  <!-- ===================== UPLOAD CARD ===================== -->
+  <div class="card" id="upload-card">
+    <h2>Relatório de Rentabilidade de Orçamento — Syscare</h2>
+    <p class="subtitle">Envie o PDF do "Relatório de Rentabilidade de Orçamento" gerado pelo Syscare. A ferramenta extrai pacote, atendimento profissional, medicamentos, materiais e o resumo fiscal (Lucro Real) para calcular margens e apontar oportunidades de repactuação. Nenhum dado é enviado a servidores — tudo é processado no navegador.</p>
+
+    <div class="upload-zone" id="upload-zone">
+      <div class="arrow">⬆</div>
+      <p>Arraste o PDF aqui ou clique para selecionar</p>
+      <small>Apenas arquivos .pdf</small>
+      <input type="file" id="file-input" accept="application/pdf,.pdf" hidden>
+    </div>
+
+    <div class="file-chip" id="file-chip" hidden>
+      📄 <span id="file-name"></span> <button id="btn-clear-file" title="Remover">✕</button>
+    </div>
+
+    <div class="processing" id="processing" hidden>
+      <div class="spinner"></div>
+      <p>Lendo e analisando o PDF...</p>
+    </div>
+
+    <div class="error-box" id="error-box" hidden></div>
+  </div>
+
+  <!-- ===================== RESULTS ===================== -->
+  <div id="results" hidden>
+
+    <div class="card">
+      <div class="patient-header">
+        <div>
+          <h2 id="res-patient-name">—</h2>
+          <div class="patient-meta" id="res-patient-meta"></div>
+        </div>
+        <div class="badge-orcamento" id="res-orcamento-badge"></div>
+      </div>
+
+      <div class="kpi-row" id="kpi-row"></div>
+
+      <div class="warn-list" id="parse-warnings" hidden></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Composição por Categoria <span class="tag">Receita / Custo / Lucro</span></div>
+      <div class="tbl-wrap">
+        <table class="data" id="tbl-categorias">
+          <thead>
+            <tr><th>Categoria</th><th class="num">Itens</th><th class="num">Receita (R$)</th><th class="num">Custo (R$)</th><th class="num">Lucro (R$)</th><th class="num">Lucro (%)</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Detalhe de Itens <span class="tag" id="items-count-tag">0 itens</span></div>
+      <div class="filter-bar">
+        <button class="pill active" data-filter="todos">Todos</button>
+        <button class="pill f-neg" data-filter="negativos">Negativos</button>
+        <button class="pill f-alert" data-filter="alertas">Alertas</button>
+        <button class="pill f-pos" data-filter="positivos">Positivos</button>
+        <span class="count" id="filter-count"></span>
+      </div>
+      <div class="tbl-wrap">
+        <table class="data" id="tbl-itens">
+          <thead>
+            <tr>
+              <th class="sortable" data-key="category">Categoria<span class="arrow"></span></th>
+              <th class="sortable" data-key="code">Código<span class="arrow"></span></th>
+              <th class="sortable" data-key="desc">Descrição<span class="arrow"></span></th>
+              <th class="sortable num" data-key="custoUnit">Custo Unit.<span class="arrow"></span></th>
+              <th class="sortable num" data-key="precoUnit">Preço Unit.<span class="arrow"></span></th>
+              <th class="sortable num" data-key="desconto">Desc%<span class="arrow"></span></th>
+              <th class="sortable num" data-key="qty">Qtd<span class="arrow"></span></th>
+              <th class="sortable num" data-key="custoTotal">Custo Total<span class="arrow"></span></th>
+              <th class="sortable num" data-key="valor">Receita Total<span class="arrow"></span></th>
+              <th class="sortable num" data-key="lucroR">Lucro R$<span class="arrow"></span></th>
+              <th class="sortable num" data-key="lucroPct">Lucro %<span class="arrow"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-itens-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Resumo Fiscal <span class="tag">Lucro Real</span></div>
+      <div class="tbl-wrap">
+        <table class="data" id="tbl-fiscal">
+          <thead><tr><th>Item</th><th class="num">%</th><th class="num">Valor (R$)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Análise Automática</div>
+      <div class="analysis-box" id="analysis-box"></div>
+    </div>
+
+    <div class="card">
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-generate-pdf">📥 Gerar Relatório PDF</button>
+        <button class="btn btn-secondary" id="btn-reset">↩ Nova Análise</button>
+      </div>
+      <span class="debug-toggle" id="debug-toggle">▸ Ver texto extraído do PDF (debug)</span>
+      <div class="debug-panel" id="debug-panel"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ===================== BIBLIOTECAS (CDN) ===================== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+'use strict';
+
+/* ================================================================
+   CONFIG
+   ================================================================ */
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const MARGIN_TARGET = { green: 10, yellow: 5 }; // >=10 green, 5-10 yellow, <5 red
+const SECTION_NAMES = ['PACOTE', 'ATENDIMENTO PROFISSIONAL', 'MEDICAMENTO', 'MATERIAL', 'RESUMO LUCRO REAL'];
+
+let STATE = {
+  fileName: '',
+  fullText: '',
+  header: {},
+  items: [],          // all parsed items across categories
+  categories: {},      // per-category aggregates
+  totalsSection: {},   // parsed "Total ..." lines
+  resumoFiscal: { rows: [], lucroLiquido: null },
+  kpis: {},
+  analysis: {},
+  sortKey: 'lucroR',
+  sortDir: 'asc',
+  filter: 'todos'
+};
+
+/* ================================================================
+   UTILITÁRIOS DE FORMATO / PARSE NUMÉRICO
+   ================================================================ */
+function fmtBRL(v){
+  if(v===null || v===undefined || !isFinite(v)) return '—';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtPct(v){
+  if(v===null || v===undefined || !isFinite(v)) return '—';
+  return Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%';
+}
+function fmtNum(v){
+  if(v===null || v===undefined || !isFinite(v)) return '—';
+  return Number(v).toLocaleString('pt-BR', {maximumFractionDigits:2});
+}
+
+// Converte um token numérico no formato BR ("R$ 1.234,56", "-12,3%", "1.234,56", "3")
+// para float. Remove tudo que não for dígito, vírgula, ponto ou sinal de menos,
+// depois remove os pontos de milhar e troca a vírgula decimal por ponto.
+function parseNumberToken(tok){
+  if(tok===null || tok===undefined) return null;
+  let s = String(tok).trim();
+  if(!s) return null;
+  const isParenNeg = /^\(.*\)$/.test(s);
+  const isNeg = isParenNeg || /^-/.test(s.replace(/^R\$\s*/,''));
+  s = s.replace(/[()]/g,'');
+  s = s.replace(/R\$/gi,'').replace(/%/g,'').trim();
+  s = s.replace(/^-/,'');
+  s = s.replace(/\./g,'').replace(',', '.');
+  let n = parseFloat(s);
+  if(isNaN(n)) return null;
+  return isNeg ? -Math.abs(n) : n;
+}
+
+function stripAccents(str){
+  return (str||'').normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+
+/* ================================================================
+   EXTRAÇÃO DE TEXTO DO PDF (pdf.js) — reconstrução de linhas por posição Y
+   ================================================================ */
+async function extractPdfLines(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const allLines = [];
+  for(let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    // Agrupa itens de texto por posição Y (linha visual), tolerância de 2px
+    const buckets = [];
+    for(const it of content.items){
+      const y = it.transform[5];
+      const x = it.transform[4];
+      let bucket = buckets.find(b => Math.abs(b.y - y) <= 2.2);
+      if(!bucket){ bucket = {y, items:[]}; buckets.push(bucket); }
+      bucket.items.push({x, str: it.str});
+    }
+    // Ordena buckets do topo para baixo (Y maior = mais alto na página)
+    buckets.sort((a,b) => b.y - a.y);
+    for(const b of buckets){
+      b.items.sort((a,c) => a.x - c.x);
+      let line = '';
+      let lastX = null, lastLen = 0;
+      for(const it of b.items){
+        if(lastX !== null && (it.x - lastX) > (lastLen*0.4 + 1) ) line += ' ';
+        else if(lastX !== null) line += (line.endsWith(' ')?'':' ');
+        line += it.str;
+        lastX = it.x; lastLen = it.str.length * 4.5;
+      }
+      const trimmed = line.replace(/\s+/g,' ').trim();
+      if(trimmed) allLines.push(trimmed);
+    }
+    allLines.push('--- PAGE BREAK ---');
+  }
+  return allLines;
+}
+
+/* ================================================================
+   SEGMENTAÇÃO EM SEÇÕES
+   ================================================================ */
+function splitIntoSections(fullText){
+  const positions = [];
+  let searchFrom = 0;
+  for(const name of SECTION_NAMES){
+    const re = new RegExp('\\b' + name.replace(/\s+/g,'\\s+') + '\\b', 'i');
+    const rest = fullText.slice(searchFrom);
+    const idx = rest.search(re);
+    if(idx >= 0){
+      const abs = searchFrom + idx;
+      positions.push({name, index: abs});
+      searchFrom = abs + name.length;
+    } else {
+      positions.push({name, index: -1});
+    }
+  }
+  const found = positions.filter(p => p.index >= 0).sort((a,b) => a.index - b.index);
+  const sections = {};
+  const headerEnd = found.length ? found[0].index : fullText.length;
+  sections.__header = fullText.slice(0, headerEnd);
+  for(let i = 0; i < found.length; i++){
+    const start = found[i].index;
+    const end = (i+1 < found.length) ? found[i+1].index : fullText.length;
+    sections[found[i].name] = fullText.slice(start, end);
+  }
+  return sections;
+}
+
+/* ================================================================
+   PARSE DO CABEÇALHO — Nº do orçamento, revisão, período, dados pessoais
+   ================================================================ */
+const DADOS_PESSOAIS_LABELS = ['Data de Nascimento','Nascimento','Endereço','Endereco','Operadora','Matrícula','Matricula','Período','Periodo'];
+function trimAtNextLabel(text){
+  let cutIdx = -1;
+  for(const label of DADOS_PESSOAIS_LABELS){
+    const re = new RegExp('\\s{2,}' + label.replace(/[çÇ]/g,'[çc]').replace(/[íÍ]/g,'[íi]') + '\\s*[:\\-]', 'i');
+    const found = text.search(re);
+    if(found >= 0 && (cutIdx < 0 || found < cutIdx)) cutIdx = found;
+  }
+  return (cutIdx >= 0 ? text.slice(0, cutIdx) : text).trim();
+}
+function parseHeader(headerText){
+  const h = {};
+  let m;
+
+  m = headerText.match(/RELAT[ÓO]RIO\s+DE\s+RENTABILIDADE\s+DE\s+OR[ÇC]AMENTO\s*N[ºO°.]*\s*[:\-]?\s*(\d+)/i);
+  h.orcamentoNum = m ? m[1] : null;
+
+  m = headerText.match(/Revis[ãa]o\s*[:\-]?\s*(\S+)/i);
+  h.revisao = m ? m[1] : null;
+
+  m = headerText.match(/Per[íi]odo\s*[:\-]?\s*([\d\/]{6,10}\s*(?:a|à|-|até)\s*[\d\/]{6,10})/i);
+  h.periodo = m ? m[1].trim() : null;
+
+  // Campos de "Dados Pessoais" podem vir cada um em sua própria linha (reconstrução
+  // por posição Y) ou vários no mesmo trecho separados por 2+ espaços. Captura-se até
+  // o fim da linha e depois corta no início do próximo rótulo conhecido, se houver.
+  m = headerText.match(/Paciente\s*[:\-]?\s*([^\n]+)/i);
+  h.paciente = m ? trimAtNextLabel(m[1]) : null;
+
+  m = headerText.match(/(?:Data\s+de\s+Nascimento|Nascimento)\s*[:\-]?\s*(\d{2}\/\d{2}\/\d{4})/i);
+  h.nascimento = m ? m[1] : null;
+
+  m = headerText.match(/Endere[çc]o\s*[:\-]?\s*([^\n]+)/i);
+  h.endereco = m ? trimAtNextLabel(m[1]) : null;
+
+  m = headerText.match(/Operadora\s*[:\-]?\s*([^\n]+)/i);
+  h.operadora = m ? trimAtNextLabel(m[1]) : null;
+
+  m = headerText.match(/Matr[íi]cula\s*[:\-]?\s*([\w.\-\/]+)/i);
+  h.matricula = m ? m[1].trim() : null;
+
+  return h;
+}
+
+/* ================================================================
+   PARSE DE ITENS — encontra "[codigo] descricao ...colunas..." dentro de uma seção
+   ================================================================ */
+// Nota: o grupo inteiro usa "\d+(?:\.\d{3})*" em vez de "\d{1,3}(?:\.\d{3})*" para
+// aceitar tanto o formato com separador de milhar ("1.234,56") quanto, defensivamente,
+// valores de 4+ dígitos eventualmente extraídos do PDF sem o separador ("1234,56").
+const RE_CURRENCY = /\(?-?R\$\s*-?\d+(?:\.\d{3})*(?:,\d{1,2})?\)?/;
+const RE_CURRENCY_G = /\(?-?R\$\s*-?\d+(?:\.\d{3})*(?:,\d{1,2})?\)?/g;
+const RE_PERCENT = /-?\d{1,3}(?:,\d{1,2})?\s*%/;
+const RE_PERCENT_G = /-?\d{1,3}(?:,\d{1,2})?\s*%/g;
+const RE_NUMBER_G = /-?\d+(?:\.\d{3})*(?:,\d{1,2})?/g;
+
+// Localiza o ponto onde a descrição termina e a área numérica (colunas) começa.
+// Usa apenas marcadores inequívocos (R$ ou %) para não confundir números que
+// fazem parte do próprio nome do item (ex: "PACOTE CURATIVO ALTA COMPL 24 HR").
+function findDataCutoff(block){
+  const cIdx = block.search(RE_CURRENCY);
+  const pIdx = block.search(RE_PERCENT);
+  if(cIdx >= 0 && pIdx >= 0) return Math.min(cIdx, pIdx);
+  if(cIdx >= 0) return cIdx;
+  if(pIdx >= 0) return pIdx;
+  return -1;
+}
+
+// Extrai valores de moeda, percentuais e números "soltos" (quantidade) de um trecho
+// já isolado como "área de dados" (após o cutoff da descrição).
+function extractDataTokens(dataPart){
+  let s = dataPart;
+  const currencies = [];
+  s = s.replace(RE_CURRENCY_G, (m) => { currencies.push(parseNumberToken(m)); return '  '; });
+  const percents = [];
+  s = s.replace(RE_PERCENT_G, (m) => { percents.push(parseNumberToken(m)); return '  '; });
+  const numbers = [];
+  s = s.replace(RE_NUMBER_G, (m) => { const v = parseNumberToken(m); if(v!==null) numbers.push(v); return '  '; });
+  return {
+    currencies: currencies.filter(v => v!==null),
+    percents: percents.filter(v => v!==null),
+    numbers
+  };
+}
+
+function buildItem(category, code, rawBlock){
+  const cutoff = findDataCutoff(rawBlock);
+  let desc, dataPart;
+  if(cutoff >= 0){
+    desc = rawBlock.slice(0, cutoff).trim();
+    dataPart = rawBlock.slice(cutoff);
+  } else {
+    desc = rawBlock.trim();
+    dataPart = '';
+  }
+  desc = desc.replace(/\s{2,}/g,' ').replace(/^[\-\s:]+/,'').trim();
+
+  const {currencies: rVals, percents: pVals, numbers: qVals} = extractDataTokens(dataPart);
+
+  const item = {
+    category, code, desc,
+    raw: rawBlock.slice(0, 300),
+    custoUnit: null, precoUnit: null, desconto: 0, qty: null,
+    custoTotal: null, valor: null, lucroR: null, lucroPct: null,
+    parseOk: true, warnings: []
+  };
+
+  if(category === 'Pacote'){
+    // Ordem esperada: preço unitário (R$), desconto (%), quantidade, valor (R$), lucro% (%), lucro R$ (R$)
+    if(rVals.length >= 3){
+      item.precoUnit = rVals[0];
+      item.valor = rVals[rVals.length - 2];
+      item.lucroR = rVals[rVals.length - 1];
+    } else if(rVals.length === 2){
+      item.precoUnit = rVals[0];
+      item.valor = rVals[0];
+      item.lucroR = rVals[1];
+      item.warnings.push('valores de moeda incompletos (2 de 3 esperados)');
+    } else if(rVals.length === 1){
+      item.valor = rVals[0];
+      item.warnings.push('apenas 1 valor de moeda encontrado');
+      item.parseOk = false;
+    } else {
+      item.parseOk = false;
+      item.warnings.push('nenhum valor de moeda encontrado');
+    }
+    item.desconto = pVals.length ? pVals[0] : 0;
+    item.lucroPct = pVals.length > 1 ? pVals[pVals.length - 1] : null;
+    item.qty = qVals.length ? qVals[0] : null;
+    // Custo do pacote não vem explícito — deriva-se de valor - lucro (ambos parseados do PDF)
+    if(item.valor !== null && item.lucroR !== null){
+      item.custoTotal = item.valor - item.lucroR;
+    }
+    if(item.custoTotal !== null && item.qty){
+      item.custoUnit = item.custoTotal / item.qty;
+    }
+  } else {
+    // ATENDIMENTO / MEDICAMENTO / MATERIAL
+    // Ordem esperada: custo unitário, preço unitário, desconto%, quantidade, custo, valor, lucro% , lucro R$
+    if(rVals.length >= 5){
+      item.custoUnit = rVals[0];
+      item.precoUnit = rVals[1];
+      item.custoTotal = rVals[rVals.length - 3];
+      item.valor = rVals[rVals.length - 2];
+      item.lucroR = rVals[rVals.length - 1];
+    } else if(rVals.length === 4){
+      item.custoUnit = rVals[0];
+      item.precoUnit = rVals[1];
+      item.custoTotal = rVals[2];
+      item.valor = rVals[2];
+      item.lucroR = rVals[3];
+      item.warnings.push('valores de moeda incompletos (4 de 5 esperados)');
+    } else if(rVals.length === 3){
+      item.precoUnit = rVals[0];
+      item.custoTotal = rVals[1];
+      item.valor = rVals[1];
+      item.lucroR = rVals[2];
+      item.warnings.push('valores de moeda incompletos (3 de 5 esperados)');
+    } else if(rVals.length > 0){
+      item.lucroR = rVals[rVals.length - 1];
+      item.warnings.push('valores de moeda muito incompletos (' + rVals.length + ' de 5 esperados)');
+      item.parseOk = false;
+    } else {
+      item.parseOk = false;
+      item.warnings.push('nenhum valor de moeda encontrado');
+    }
+    item.desconto = pVals.length ? pVals[0] : 0;
+    item.lucroPct = pVals.length > 1 ? pVals[pVals.length - 1] : null;
+    item.qty = qVals.length ? qVals[0] : null;
+  }
+
+  // Lucro % — se não veio explícito no PDF, calcula a partir dos valores parseados
+  if(item.lucroPct === null && item.valor){
+    item.lucroPct = (item.lucroR / item.valor) * 100;
+  }
+  if(item.lucroR === null && item.valor !== null && item.custoTotal !== null){
+    item.lucroR = item.valor - item.custoTotal;
+  }
+
+  if(item.desconto !== null && item.desconto >= 99.5 && item.custoTotal && Math.abs(item.custoTotal) > 0.009){
+    item.fullDiscountAbsorbed = true;
+  }
+  if(!item.parseOk) item.warnings.push('item exibido com dados parciais — confira o PDF original');
+
+  return item;
+}
+
+function parseItemsInSection(sectionText, category){
+  const items = [];
+  if(!sectionText) return items;
+  const codeRe = /\[\s*([A-Za-z0-9][A-Za-z0-9\-\.\/]*)\s*\]/g;
+  const matches = [];
+  let m;
+  while((m = codeRe.exec(sectionText))){
+    matches.push({code: m[1], start: m.index, end: codeRe.lastIndex});
+  }
+  // Linhas "Total ..." (ex: "Total Material", "Total Geral Orçamento") encerram a área
+  // de itens de uma seção. Sem isso, o último item de cada seção "engoliria" as linhas
+  // de totais que vêm imediatamente depois dele, corrompendo seus valores.
+  const totalRe = /(^|\n)[ \t]*Total\b/gi;
+  const totalPositions = [];
+  let tm;
+  while((tm = totalRe.exec(sectionText))){
+    totalPositions.push(tm.index + tm[1].length);
+  }
+  for(let i = 0; i < matches.length; i++){
+    const blockStart = matches[i].end;
+    let blockEnd = (i + 1 < matches.length) ? matches[i+1].start : sectionText.length;
+    const nextTotal = totalPositions.find(p => p > blockStart && p < blockEnd);
+    if(nextTotal !== undefined) blockEnd = nextTotal;
+    let block = sectionText.slice(blockStart, blockEnd)
+      .replace(/---\s*PAGE BREAK\s*---/g, ' ')
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if(!block) continue;
+    items.push(buildItem(category, matches[i].code, block));
+  }
+  return items;
+}
+
+/* ================================================================
+   PARSE DE TOTAIS ("Total Material", "Total Produtos", "Total Geral Orçamento")
+   ================================================================ */
+function parseTotals(fullText){
+  const totals = {};
+  const lines = fullText.split('\n');
+  for(const rawLine of lines){
+    const line = rawLine.trim();
+    if(!/^total\b/i.test(line)) continue;
+    const cutoff = findDataCutoff(line);
+    const label = (cutoff >= 0 ? line.slice(0, cutoff) : line).trim();
+    const dataPart = cutoff >= 0 ? line.slice(cutoff) : '';
+    const {currencies, percents} = extractDataTokens(dataPart);
+    const key = stripAccents(label).toLowerCase();
+    const entry = {label, valores: currencies, percentuais: percents};
+    if(key.includes('material')) totals.totalMaterial = entry;
+    else if(key.includes('produto')) totals.totalProdutos = entry;
+    else if(key.includes('geral') || key.includes('orcamento')) totals.totalGeral = entry;
+    else {
+      totals.outros = totals.outros || [];
+      totals.outros.push(entry);
+    }
+  }
+  return totals;
+}
+
+/* ================================================================
+   PARSE DO RESUMO LUCRO REAL (tributos, admin, lucro líquido)
+   ================================================================ */
+const RESUMO_KEYS = [
+  {key:'admin', match:['despesa administrativa','desp. administrativa','administrativa']},
+  {key:'iss', match:['iss']},
+  {key:'pis', match:['piss','pis']},
+  {key:'cofins', match:['cofins']},
+  {key:'irpj', match:['irpj']},
+  {key:'csll', match:['cssl','csll']},
+  {key:'lucroLiquido', match:['lucro liquido','lucro líquido']}
+];
+
+function classifyResumoLabel(label){
+  const norm = stripAccents(label).toLowerCase();
+  for(const rk of RESUMO_KEYS){
+    if(rk.match.some(k => norm.includes(k))) return rk.key;
+  }
+  return null;
+}
+
+function parseResumoFiscal(sectionText){
+  const result = {rows: [], byKey: {}, lucroLiquido: null};
+  if(!sectionText) return result;
+  const lines = sectionText.split('\n').map(l => l.trim()).filter(Boolean);
+  for(const line of lines){
+    if(/^RESUMO\s+LUCRO\s+REAL/i.test(line)) continue;
+    const cutoff = findDataCutoff(line);
+    if(cutoff < 0) continue;
+    const label = line.slice(0, cutoff).replace(/[:\-\s]+$/,'').trim();
+    if(!label) continue;
+    const dataPart = line.slice(cutoff);
+    const {currencies, percents} = extractDataTokens(dataPart);
+    if(currencies.length === 0 && percents.length === 0) continue;
+    const row = {
+      label,
+      pct: percents.length ? percents[0] : null,
+      val: currencies.length ? currencies[currencies.length - 1] : null
+    };
+    result.rows.push(row);
+    const key = classifyResumoLabel(label);
+    if(key){
+      result.byKey[key] = row;
+      if(key === 'lucroLiquido') result.lucroLiquido = row;
+    }
+  }
+  return result;
+}
+
+/* ================================================================
+   PIPELINE PRINCIPAL DE PARSE
+   ================================================================ */
+async function parsePdf(file){
+  const lines = await extractPdfLines(file);
+  const fullText = lines.join('\n');
+  const sections = splitIntoSections(fullText);
+
+  const header = parseHeader(sections.__header || '');
+
+  const pacote = parseItemsInSection(sections['PACOTE'], 'Pacote');
+  const atendimento = parseItemsInSection(sections['ATENDIMENTO PROFISSIONAL'], 'Atendimento Profissional');
+  const medicamento = parseItemsInSection(sections['MEDICAMENTO'], 'Medicamento');
+  const material = parseItemsInSection(sections['MATERIAL'], 'Material');
+
+  const allItems = [...pacote, ...atendimento, ...medicamento, ...material];
+  const totalsSection = parseTotals(fullText);
+  const resumoFiscal = parseResumoFiscal(sections['RESUMO LUCRO REAL'] || '');
+
+  if(allItems.length === 0){
+    throw new Error('Não foi possível localizar itens de Pacote, Atendimento Profissional, Medicamento ou Material no PDF. Verifique se o arquivo é um "Relatório de Rentabilidade de Orçamento" do Syscare, ou use o painel de debug para inspecionar o texto extraído.');
+  }
+
+  return {fullText, sections, header, items: allItems, totalsSection, resumoFiscal};
+}
+
+/* ================================================================
+   AGREGAÇÃO / CÁLCULO DE KPIs
+   ================================================================ */
+function marginBucket(pct){
+  if(pct === null || pct === undefined || !isFinite(pct)) return 'neutral';
+  if(pct >= MARGIN_TARGET.green) return 'green';
+  if(pct >= MARGIN_TARGET.yellow) return 'yellow';
+  return 'red';
+}
+
+function aggregate(items){
+  const cats = {};
+  for(const it of items){
+    if(!cats[it.category]) cats[it.category] = {category: it.category, itens: 0, receita: 0, custo: 0, lucro: 0};
+    const c = cats[it.category];
+    c.itens += 1;
+    c.receita += (it.valor || 0);
+    c.custo += (it.custoTotal || 0);
+    c.lucro += (it.lucroR || 0);
+  }
+  for(const key in cats){
+    const c = cats[key];
+    c.lucroPct = c.receita ? (c.lucro / c.receita) * 100 : null;
+  }
+  return cats;
+}
+
+function computeKpis(items, resumoFiscal){
+  const receitaTotal = items.reduce((s,i) => s + (i.valor || 0), 0);
+  const custoTotal = items.reduce((s,i) => s + (i.custoTotal || 0), 0);
+  const lucroOperacionalR = items.reduce((s,i) => s + (i.lucroR || 0), 0);
+  const lucroOperacionalPct = receitaTotal ? (lucroOperacionalR / receitaTotal) * 100 : null;
+
+  let lucroLiquidoR = null, lucroLiquidoPct = null;
+  if(resumoFiscal && resumoFiscal.lucroLiquido){
+    lucroLiquidoR = resumoFiscal.lucroLiquido.val;
+    lucroLiquidoPct = resumoFiscal.lucroLiquido.pct;
+    // Se só um dos dois veio parseado, deriva o outro a partir da receita total
+    if(lucroLiquidoPct === null && lucroLiquidoR !== null && receitaTotal){
+      lucroLiquidoPct = (lucroLiquidoR / receitaTotal) * 100;
+    }
+    if(lucroLiquidoR === null && lucroLiquidoPct !== null && receitaTotal){
+      lucroLiquidoR = (lucroLiquidoPct / 100) * receitaTotal;
+    }
+  }
+
+  return {receitaTotal, custoTotal, lucroOperacionalR, lucroOperacionalPct, lucroLiquidoR, lucroLiquidoPct};
+}
+
+/* ================================================================
+   ANÁLISE AUTOMÁTICA
+   ================================================================ */
+function buildAnalysis(items, categorias, kpis){
+  const sortedByLucro = [...items].filter(i => i.lucroR !== null).sort((a,b) => a.lucroR - b.lucroR);
+  const top3Negativos = sortedByLucro.filter(i => i.lucroR < 0).slice(0, 3);
+
+  const fullDiscountItems = items
+    .filter(i => i.fullDiscountAbsorbed)
+    .sort((a,b) => (b.custoTotal||0) - (a.custoTotal||0));
+
+  const catArr = Object.values(categorias);
+  const worstCategory = catArr.length ? catArr.reduce((worst, c) => {
+    if(worst === null) return c;
+    const wp = worst.lucroPct === null ? -Infinity : worst.lucroPct;
+    const cp = c.lucroPct === null ? -Infinity : c.lucroPct;
+    return cp < wp ? c : worst;
+  }, null) : null;
+
+  const isRentavel = kpis.lucroLiquidoPct !== null ? kpis.lucroLiquidoPct > 0 : (kpis.lucroOperacionalPct !== null ? kpis.lucroOperacionalPct > 0 : false);
+
+  return {top3Negativos, fullDiscountItems, worstCategory, isRentavel};
+}
+
+function renderAnalysisHtml(a, kpis){
+  const parts = [];
+
+  const llKnown = kpis.lucroLiquidoPct !== null;
+  const verdictClass = a.isRentavel ? 'ok' : 'bad';
+  const verdictText = a.isRentavel ? 'PACIENTE RENTÁVEL' : 'PACIENTE NÃO RENTÁVEL';
+  parts.push(`<div class="verdict ${verdictClass}">${verdictText}</div>`);
+
+  if(llKnown){
+    parts.push(`<p>Lucro Líquido apurado no Resumo Fiscal: <span class="highlight">${fmtPct(kpis.lucroLiquidoPct)}</span> (${fmtBRL(kpis.lucroLiquidoR)}). A referência interna de alvo da Global Care é <b>LL 10%</b>${kpis.lucroLiquidoPct < 10 ? ' — este orçamento está <b>abaixo do alvo</b>.' : ' — dentro/acima do alvo.'}</p>`);
+  } else {
+    parts.push(`<p>Não foi possível localizar a linha "Lucro Líquido" no RESUMO LUCRO REAL do PDF. A análise abaixo usa o Lucro Operacional (${fmtPct(kpis.lucroOperacionalPct)}) como referência.</p>`);
+  }
+
+  if(a.top3Negativos.length){
+    parts.push('<h3>Itens que mais drenam margem</h3><ul>');
+    for(const it of a.top3Negativos){
+      parts.push(`<li><span class="neg-item">${fmtBRL(it.lucroR)}</span> — [${it.code}] ${it.desc || '(sem descrição)'} — ${it.category}, lucro ${fmtPct(it.lucroPct)}</li>`);
+    }
+    parts.push('</ul>');
+  } else {
+    parts.push('<h3>Itens que mais drenam margem</h3><p>Nenhum item com lucro negativo identificado.</p>');
+  }
+
+  if(a.fullDiscountItems.length){
+    parts.push('<h3>Itens com desconto de 100% e custo relevante</h3><ul>');
+    for(const it of a.fullDiscountItems.slice(0,5)){
+      parts.push(`<li>[${it.code}] ${it.desc || '(sem descrição)'} — custo absorvido integralmente: <span class="neg-item">${fmtBRL(it.custoTotal)}</span> (${it.category})</li>`);
+    }
+    parts.push('</ul>');
+  }
+
+  if(a.worstCategory){
+    parts.push(`<h3>Categoria com pior margem</h3><p><b>${a.worstCategory.category}</b> — lucro de ${fmtPct(a.worstCategory.lucroPct)} sobre receita de ${fmtBRL(a.worstCategory.receita)}.</p>`);
+  }
+
+  const negCount = a.top3Negativos.length;
+  const sugestao = [];
+  if(!a.isRentavel || (kpis.lucroLiquidoPct !== null && kpis.lucroLiquidoPct < 10)){
+    sugestao.push('Este orçamento é candidato a repactuação de diária/valores junto à operadora.');
+  }
+  if(negCount > 0){
+    sugestao.push('Priorize a renegociação dos itens listados como "itens que mais drenam margem" — são os que geram maior prejuízo unitário.');
+  }
+  if(a.fullDiscountItems.length){
+    sugestao.push('Itens com desconto de 100% representam custo puro sem contrapartida de receita — avalie se devem ser embutidos na diária ou cobrados separadamente.');
+  }
+  if(a.worstCategory && a.worstCategory.lucroPct !== null && a.worstCategory.lucroPct < 10){
+    sugestao.push(`A categoria "${a.worstCategory.category}" concentra a pior margem — pode ser o ponto de partida da negociação.`);
+  }
+  if(sugestao.length){
+    parts.push('<h3>Sugestão para repactuação</h3><ul>' + sugestao.map(s => `<li>${s}</li>`).join('') + '</ul>');
+  }
+
+  return parts.join('\n');
+}
+
+/* ================================================================
+   RENDERIZAÇÃO — DASHBOARD
+   ================================================================ */
+function kpiCardHtml(label, value, sub, bucket){
+  const cls = bucket ? `kpi-${bucket}` : 'kpi-neutral';
+  return `<div class="kpi-card ${cls}"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ''}</div>`;
+}
+
+function renderKpis(kpis){
+  const row = document.getElementById('kpi-row');
+  const opBucket = marginBucket(kpis.lucroOperacionalPct);
+  const llBucket = kpis.lucroLiquidoPct !== null ? marginBucket(kpis.lucroLiquidoPct) : 'neutral';
+  row.innerHTML = [
+    kpiCardHtml('Receita Total', fmtBRL(kpis.receitaTotal), null, null),
+    kpiCardHtml('Custo Total', fmtBRL(kpis.custoTotal), null, null),
+    kpiCardHtml('Lucro Operacional', fmtBRL(kpis.lucroOperacionalR), fmtPct(kpis.lucroOperacionalPct), opBucket),
+    kpiCardHtml('Lucro Líquido (Resumo Fiscal)', kpis.lucroLiquidoR !== null ? fmtBRL(kpis.lucroLiquidoR) : '—', kpis.lucroLiquidoPct !== null ? fmtPct(kpis.lucroLiquidoPct) : 'não localizado no PDF', llBucket)
+  ].join('');
+}
+
+function renderCategorias(categorias){
+  const tbody = document.querySelector('#tbl-categorias tbody');
+  const order = ['Pacote','Atendimento Profissional','Medicamento','Material'];
+  const rows = order.filter(c => categorias[c]).map(c => categorias[c]);
+  tbody.innerHTML = rows.map(c => {
+    const bucket = marginBucket(c.lucroPct);
+    const rowClass = bucket === 'green' ? 'cat-green' : bucket === 'yellow' ? 'cat-yellow' : bucket === 'red' ? 'cat-red' : '';
+    return `<tr class="${rowClass}">
+      <td><b>${c.category}</b></td>
+      <td class="num">${c.itens}</td>
+      <td class="num">${fmtBRL(c.receita)}</td>
+      <td class="num">${fmtBRL(c.custo)}</td>
+      <td class="num">${fmtBRL(c.lucro)}</td>
+      <td class="num"><b>${fmtPct(c.lucroPct)}</b></td>
+    </tr>`;
+  }).join('');
+}
+
+function itemRowClass(it){
+  if(it.lucroR !== null && it.lucroR < 0) return 'row-neg';
+  if(it.lucroPct !== null && it.lucroPct < 10) return 'row-alert';
+  return '';
+}
+
+function filterItems(items, filter){
+  switch(filter){
+    case 'negativos': return items.filter(i => i.lucroR !== null && i.lucroR < 0);
+    case 'alertas': return items.filter(i => i.lucroR !== null && i.lucroR >= 0 && i.lucroPct !== null && i.lucroPct < 10);
+    case 'positivos': return items.filter(i => i.lucroPct !== null && i.lucroPct >= 10);
+    default: return items;
+  }
+}
+
+function sortItems(items, key, dir){
+  const sorted = [...items].sort((a,b) => {
+    let av = a[key], bv = b[key];
+    if(key === 'category' || key === 'code' || key === 'desc'){
+      av = (av || '').toString().toLowerCase();
+      bv = (bv || '').toString().toLowerCase();
+      if(av < bv) return dir === 'asc' ? -1 : 1;
+      if(av > bv) return dir === 'asc' ? 1 : -1;
+      return 0;
+    }
+    av = (av === null || av === undefined || !isFinite(av)) ? (dir === 'asc' ? Infinity : -Infinity) : av;
+    bv = (bv === null || bv === undefined || !isFinite(bv)) ? (dir === 'asc' ? Infinity : -Infinity) : bv;
+    return dir === 'asc' ? av - bv : bv - av;
+  });
+  return sorted;
+}
+
+const ITEM_KEY_MAP = {
+  category: 'category', code: 'code', desc: 'desc',
+  custoUnit: 'custoUnit', precoUnit: 'precoUnit', desconto: 'desconto', qty: 'qty',
+  custoTotal: 'custoTotal', valor: 'valor', lucroR: 'lucroR', lucroPct: 'lucroPct'
+};
+
+function renderItemsTable(){
+  const filtered = filterItems(STATE.items, STATE.filter);
+  const sorted = sortItems(filtered, ITEM_KEY_MAP[STATE.sortKey], STATE.sortDir);
+  const tbody = document.getElementById('tbl-itens-body');
+  tbody.innerHTML = sorted.map(it => {
+    const cls = itemRowClass(it) + (it.warnings.length ? ' row-warn' : '');
+    const warnTitle = it.warnings.length ? ` title="${it.warnings.join('; ').replace(/"/g,'')}"` : '';
+    return `<tr class="${cls}"${warnTitle}>
+      <td>${it.category}</td>
+      <td class="code">${it.code}${it.warnings.length ? ' ⚠' : ''}</td>
+      <td class="wrap">${it.desc || '(sem descrição)'}</td>
+      <td class="num">${fmtBRL(it.custoUnit)}</td>
+      <td class="num">${fmtBRL(it.precoUnit)}</td>
+      <td class="num">${fmtPct(it.desconto)}</td>
+      <td class="num">${fmtNum(it.qty)}</td>
+      <td class="num">${fmtBRL(it.custoTotal)}</td>
+      <td class="num">${fmtBRL(it.valor)}</td>
+      <td class="num">${fmtBRL(it.lucroR)}</td>
+      <td class="num">${fmtPct(it.lucroPct)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('items-count-tag').textContent = `${sorted.length} de ${STATE.items.length} itens`;
+  document.getElementById('filter-count').textContent = STATE.filter === 'todos' ? '' : `(${sorted.length} itens no filtro)`;
+
+  document.querySelectorAll('#tbl-itens th.sortable').forEach(th => {
+    const key = th.dataset.key;
+    const arrowSpan = th.querySelector('.arrow');
+    if(key === STATE.sortKey){
+      arrowSpan.textContent = STATE.sortDir === 'asc' ? '▲' : '▼';
+    } else {
+      arrowSpan.textContent = '';
+    }
+  });
+}
+
+function renderResumoFiscal(resumo){
+  const tbody = document.querySelector('#tbl-fiscal tbody');
+  if(!resumo.rows.length){
+    tbody.innerHTML = '<tr><td colspan="3" style="color:#999">Seção RESUMO LUCRO REAL não encontrada no PDF.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = resumo.rows.map(r => {
+    const isLL = r === resumo.lucroLiquido;
+    return `<tr${isLL ? ' style="font-weight:700;background:var(--beige)"' : ''}>
+      <td>${r.label}</td>
+      <td class="num">${r.pct !== null ? fmtPct(r.pct) : '—'}</td>
+      <td class="num">${r.val !== null ? fmtBRL(r.val) : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderParseWarnings(items){
+  const box = document.getElementById('parse-warnings');
+  const withWarnings = items.filter(i => i.warnings.length);
+  if(!withWarnings.length){ box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `⚠ ${withWarnings.length} item(ns) foram extraídos com dados parciais (passe o mouse sobre o código na tabela de itens para ver o motivo). Use o painel de debug para conferir o texto original do PDF.`;
+}
+
+function renderPatientHeader(header, itemCount){
+  document.getElementById('res-patient-name').textContent = header.paciente || 'Paciente não identificado no PDF';
+  const metaParts = [];
+  if(header.operadora) metaParts.push(`<b>Operadora:</b> ${header.operadora}`);
+  if(header.matricula) metaParts.push(`<b>Matrícula:</b> ${header.matricula}`);
+  if(header.nascimento) metaParts.push(`<b>Nascimento:</b> ${header.nascimento}`);
+  if(header.endereco) metaParts.push(`<b>Endereço:</b> ${header.endereco}`);
+  if(header.periodo) metaParts.push(`<b>Período:</b> ${header.periodo}`);
+  metaParts.push(`<b>${itemCount}</b> itens analisados`);
+  document.getElementById('res-patient-meta').innerHTML = metaParts.join(' &nbsp;•&nbsp; ');
+
+  const badge = document.getElementById('res-orcamento-badge');
+  let badgeText = header.orcamentoNum ? `Orçamento Nº ${header.orcamentoNum}` : 'Orçamento';
+  if(header.revisao) badgeText += ` — Rev. ${header.revisao}`;
+  badge.textContent = badgeText;
+}
+
+/* ================================================================
+   RENDER PRINCIPAL
+   ================================================================ */
+function renderAll(parsed){
+  STATE.header = parsed.header;
+  STATE.items = parsed.items;
+  STATE.totalsSection = parsed.totalsSection;
+  STATE.resumoFiscal = parsed.resumoFiscal;
+  STATE.categorias = aggregate(parsed.items);
+  STATE.kpis = computeKpis(parsed.items, parsed.resumoFiscal);
+  STATE.analysis = buildAnalysis(parsed.items, STATE.categorias, STATE.kpis);
+  STATE.fullText = parsed.fullText;
+
+  renderPatientHeader(parsed.header, parsed.items.length);
+  renderKpis(STATE.kpis);
+  renderCategorias(STATE.categorias);
+  renderItemsTable();
+  renderResumoFiscal(parsed.resumoFiscal);
+  renderParseWarnings(parsed.items);
+  document.getElementById('analysis-box').innerHTML = renderAnalysisHtml(STATE.analysis, STATE.kpis);
+  document.getElementById('debug-panel').textContent = parsed.fullText;
+
+  document.getElementById('results').hidden = false;
+}
+
+/* ================================================================
+   GERAÇÃO DE PDF (jsPDF + autotable) — estilo bege/preto GGC
+   ================================================================ */
+async function loadImageAsDataURL(url){
+  try{
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch(e){ return null; }
+}
+
+async function generateReportPdf(){
+  const btn = document.getElementById('btn-generate-pdf');
+  btn.disabled = true;
+  const originalLabel = btn.innerHTML;
+  btn.innerHTML = 'Gerando PDF...';
+  try{
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({unit:'pt', format:'a4'});
+    const PAGE_W = doc.internal.pageSize.getWidth();
+    const ML = 36, MR = 36, MT = 30;
+    const CW = PAGE_W - ML - MR;
+    const BEIGE = [245,245,220], BLACKC = [0,0,0], WHITEC = [255,255,255], REDC = [228,31,27];
+
+    let y = MT;
+
+    // ---- HEADER ----
+    doc.setFillColor(...BEIGE);
+    doc.rect(ML, y, CW, 46, 'F');
+    doc.setDrawColor(...BLACKC);
+    doc.setLineWidth(0.75);
+    doc.rect(ML, y, CW, 46);
+
+    const logoData = await loadImageAsDataURL('logo1.png');
+    if(logoData){
+      try{ doc.addImage(logoData, 'PNG', ML+8, y+7, 0, 32); } catch(e){ /* segue sem logo */ }
+    }
+
+    doc.setTextColor(0,0,0);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(12);
+    const patientName = STATE.header.paciente || 'Paciente não identificado';
+    doc.text(`ANÁLISE DE RENTABILIDADE — ${patientName}`, ML + CW/2 + 30, y + 20, {align:'center', maxWidth: CW - 200});
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    let subHeader = [];
+    if(STATE.header.orcamentoNum) subHeader.push(`Orçamento Nº ${STATE.header.orcamentoNum}`);
+    if(STATE.header.revisao) subHeader.push(`Revisão ${STATE.header.revisao}`);
+    if(STATE.header.periodo) subHeader.push(`Período: ${STATE.header.periodo}`);
+    doc.text(subHeader.join('   •   '), ML + CW/2 + 30, y + 36, {align:'center', maxWidth: CW - 200});
+    y += 46 + 14;
+
+    // ---- DADOS DO PACIENTE ----
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text('Dados do Paciente', ML, y); y += 12;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    const infoLines = [];
+    if(STATE.header.operadora) infoLines.push(`Operadora: ${STATE.header.operadora}`);
+    if(STATE.header.matricula) infoLines.push(`Matrícula: ${STATE.header.matricula}`);
+    if(STATE.header.nascimento) infoLines.push(`Nascimento: ${STATE.header.nascimento}`);
+    if(STATE.header.endereco) infoLines.push(`Endereço: ${STATE.header.endereco}`);
+    if(!infoLines.length) infoLines.push('Dados pessoais não localizados no PDF original.');
+    for(const line of infoLines){ doc.text(line, ML, y); y += 11; }
+    y += 8;
+
+    // ---- KPIs ----
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.setFillColor(...BEIGE); doc.rect(ML, y, CW, 16, 'F'); doc.rect(ML, y, CW, 16);
+    doc.text('Resumo Financeiro', ML+6, y+11);
+    y += 16;
+    const kpis = STATE.kpis;
+    const kpiRows = [
+      ['Receita Total', fmtBRL(kpis.receitaTotal)],
+      ['Custo Total', fmtBRL(kpis.custoTotal)],
+      ['Lucro Operacional', `${fmtBRL(kpis.lucroOperacionalR)}  (${fmtPct(kpis.lucroOperacionalPct)})`],
+      ['Lucro Líquido (Resumo Fiscal)', kpis.lucroLiquidoR !== null ? `${fmtBRL(kpis.lucroLiquidoR)}  (${fmtPct(kpis.lucroLiquidoPct)})` : 'não localizado no PDF']
+    ];
+    doc.autoTable({
+      startY: y, margin:{left:ML, right:MR}, theme:'grid',
+      styles:{font:'helvetica', fontSize:9, cellPadding:5, lineColor:BLACKC, lineWidth:0.5, textColor:BLACKC},
+      columnStyles:{0:{cellWidth:CW*0.5, fontStyle:'bold'}, 1:{cellWidth:CW*0.5, halign:'right'}},
+      body: kpiRows
+    });
+    y = doc.lastAutoTable.finalY + 14;
+
+    // ---- COMPOSIÇÃO POR CATEGORIA ----
+    if(y > 680){ doc.addPage(); y = MT; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.setFillColor(...BEIGE); doc.rect(ML, y, CW, 16, 'F'); doc.rect(ML, y, CW, 16);
+    doc.text('Composição por Categoria', ML+6, y+11);
+    y += 16;
+    const catOrder = ['Pacote','Atendimento Profissional','Medicamento','Material'];
+    const catRows = catOrder.filter(c => STATE.categorias[c]).map(c => {
+      const cat = STATE.categorias[c];
+      return [cat.category, String(cat.itens), fmtBRL(cat.receita), fmtBRL(cat.custo), fmtBRL(cat.lucro), fmtPct(cat.lucroPct)];
+    });
+    doc.autoTable({
+      startY: y, margin:{left:ML, right:MR}, theme:'grid',
+      styles:{font:'helvetica', fontSize:8.5, cellPadding:4, lineColor:BLACKC, lineWidth:0.5, textColor:BLACKC},
+      head:[['Categoria','Itens','Receita','Custo','Lucro R$','Lucro %']],
+      headStyles:{fillColor:BEIGE, textColor:BLACKC, fontStyle:'bold', halign:'center'},
+      columnStyles:{0:{cellWidth:CW*0.30,halign:'left'},1:{cellWidth:CW*0.10,halign:'center'},2:{cellWidth:CW*0.15,halign:'right'},3:{cellWidth:CW*0.15,halign:'right'},4:{cellWidth:CW*0.15,halign:'right'},5:{cellWidth:CW*0.15,halign:'right'}},
+      body: catRows,
+      didParseCell(d){
+        if(d.section === 'body' && d.column.index === 5){
+          const raw = catRows[d.row.index][5];
+          const pctVal = parseFloat(String(raw).replace('%','').replace(',','.'));
+          if(!isNaN(pctVal) && pctVal < 5) d.cell.styles.textColor = REDC;
+        }
+      }
+    });
+    y = doc.lastAutoTable.finalY + 14;
+
+    // ---- TOP ISSUES (itens com margem negativa) ----
+    const negativos = STATE.items.filter(i => i.lucroR !== null && i.lucroR < 0).sort((a,b) => a.lucroR - b.lucroR).slice(0, 15);
+    if(negativos.length){
+      if(y > 640){ doc.addPage(); y = MT; }
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.setFillColor(...BEIGE); doc.rect(ML, y, CW, 16, 'F'); doc.rect(ML, y, CW, 16);
+      doc.text('Itens com Margem Negativa (principais)', ML+6, y+11);
+      y += 16;
+      doc.autoTable({
+        startY: y, margin:{left:ML, right:MR}, theme:'grid',
+        styles:{font:'helvetica', fontSize:7.5, cellPadding:3, lineColor:BLACKC, lineWidth:0.5, textColor:BLACKC},
+        head:[['Categoria','Código','Descrição','Custo Total','Receita Total','Lucro R$','Lucro %']],
+        headStyles:{fillColor:BEIGE, textColor:BLACKC, fontStyle:'bold', fontSize:7, halign:'center'},
+        columnStyles:{0:{cellWidth:CW*0.14},1:{cellWidth:CW*0.10},2:{cellWidth:CW*0.32,halign:'left'},3:{cellWidth:CW*0.13,halign:'right'},4:{cellWidth:CW*0.13,halign:'right'},5:{cellWidth:CW*0.11,halign:'right'},6:{cellWidth:CW*0.07,halign:'right'}},
+        body: negativos.map(it => [it.category, it.code, it.desc || '', fmtBRL(it.custoTotal), fmtBRL(it.valor), fmtBRL(it.lucroR), fmtPct(it.lucroPct)]),
+        didParseCell(d){ if(d.section==='body') d.cell.styles.textColor = REDC; }
+      });
+      y = doc.lastAutoTable.finalY + 14;
+    }
+
+    // ---- RESUMO FISCAL ----
+    if(STATE.resumoFiscal.rows.length){
+      if(y > 640){ doc.addPage(); y = MT; }
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.setFillColor(...BEIGE); doc.rect(ML, y, CW, 16, 'F'); doc.rect(ML, y, CW, 16);
+      doc.text('Resumo Fiscal (Lucro Real)', ML+6, y+11);
+      y += 16;
+      doc.autoTable({
+        startY: y, margin:{left:ML, right:MR}, theme:'grid',
+        styles:{font:'helvetica', fontSize:8.5, cellPadding:4, lineColor:BLACKC, lineWidth:0.5, textColor:BLACKC},
+        head:[['Item','%','Valor (R$)']],
+        headStyles:{fillColor:BEIGE, textColor:BLACKC, fontStyle:'bold', halign:'left'},
+        columnStyles:{0:{cellWidth:CW*0.55,halign:'left'},1:{cellWidth:CW*0.20,halign:'right'},2:{cellWidth:CW*0.25,halign:'right'}},
+        body: STATE.resumoFiscal.rows.map(r => [r.label, r.pct!==null?fmtPct(r.pct):'—', r.val!==null?fmtBRL(r.val):'—'])
+      });
+      y = doc.lastAutoTable.finalY + 14;
+    }
+
+    // ---- ANÁLISE (texto) ----
+    if(y > 620){ doc.addPage(); y = MT; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.setFillColor(...BEIGE); doc.rect(ML, y, CW, 16, 'F'); doc.rect(ML, y, CW, 16);
+    doc.text('Análise Automática', ML+6, y+11);
+    y += 22;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+
+    const analysisLines = [];
+    analysisLines.push(STATE.analysis.isRentavel ? 'Diagnóstico: PACIENTE RENTÁVEL' : 'Diagnóstico: PACIENTE NÃO RENTÁVEL');
+    if(kpis.lucroLiquidoPct !== null){
+      analysisLines.push(`Lucro Líquido apurado: ${fmtPct(kpis.lucroLiquidoPct)} (${fmtBRL(kpis.lucroLiquidoR)}) — alvo de referência Global Care: LL 10%.`);
+    }
+    if(STATE.analysis.top3Negativos.length){
+      analysisLines.push('Itens que mais drenam margem:');
+      for(const it of STATE.analysis.top3Negativos){
+        analysisLines.push(`  - [${it.code}] ${it.desc || ''}: ${fmtBRL(it.lucroR)} (${fmtPct(it.lucroPct)})`);
+      }
+    }
+    if(STATE.analysis.worstCategory){
+      analysisLines.push(`Categoria com pior margem: ${STATE.analysis.worstCategory.category} (${fmtPct(STATE.analysis.worstCategory.lucroPct)})`);
+    }
+    if(STATE.analysis.fullDiscountItems.length){
+      analysisLines.push(`Itens com desconto de 100% e custo absorvido: ${STATE.analysis.fullDiscountItems.length} item(ns).`);
+    }
+
+    for(const line of analysisLines){
+      const wrapped = doc.splitTextToSize(line, CW);
+      for(const wl of wrapped){
+        if(y > 770){ doc.addPage(); y = MT; }
+        doc.text(wl, ML, y);
+        y += 11;
+      }
+    }
+
+    // ---- FOOTER em todas as páginas ----
+    const pageCount = doc.internal.getNumberOfPages();
+    const now = new Date().toLocaleString('pt-BR');
+    for(let p = 1; p <= pageCount; p++){
+      doc.setPage(p);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+      doc.setTextColor(100,100,100);
+      doc.text(`Gerado em ${now} — Grupo Global Care — Health Solutions`, ML, 812);
+      doc.text(`Página ${p} de ${pageCount}`, PAGE_W - MR, 812, {align:'right'});
+      doc.setTextColor(0,0,0);
+    }
+
+    const safeName = (STATE.header.paciente || 'paciente').replace(/[^\w\-]+/g,'_').slice(0,40);
+    doc.save(`Rentabilidade_${safeName}_${STATE.header.orcamentoNum || ''}.pdf`);
+  } catch(err){
+    console.error(err);
+    alert('Erro ao gerar o PDF: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalLabel;
+  }
+}
+
+/* ================================================================
+   FLUXO DE UPLOAD / EVENTOS
+   ================================================================ */
+function showError(msg){
+  const box = document.getElementById('error-box');
+  box.innerHTML = `<strong>Não foi possível analisar o PDF.</strong><br>${msg}`;
+  box.hidden = false;
+}
+function clearError(){
+  document.getElementById('error-box').hidden = true;
+}
+
+async function handleFile(file){
+  if(!file) return;
+  if(!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf'){
+    showError('Selecione um arquivo PDF válido.');
+    return;
+  }
+  clearError();
+  document.getElementById('results').hidden = true;
+  document.getElementById('file-chip').hidden = false;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('processing').hidden = false;
+  STATE.fileName = file.name;
+  try{
+    const parsed = await parsePdf(file);
+    renderAll(parsed);
+  } catch(err){
+    console.error(err);
+    showError(err.message || 'Erro inesperado ao processar o PDF.');
+  } finally {
+    document.getElementById('processing').hidden = true;
+  }
+}
+
+function wireEvents(){
+  const zone = document.getElementById('upload-zone');
+  const input = document.getElementById('file-input');
+
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    handleFile(file);
+  });
+  input.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+  document.getElementById('btn-clear-file').addEventListener('click', (e) => {
+    e.stopPropagation();
+    input.value = '';
+    document.getElementById('file-chip').hidden = true;
+    document.getElementById('results').hidden = true;
+    clearError();
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    input.value = '';
+    document.getElementById('file-chip').hidden = true;
+    document.getElementById('results').hidden = true;
+    clearError();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  document.getElementById('btn-generate-pdf').addEventListener('click', generateReportPdf);
+
+  document.querySelectorAll('.filter-bar .pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.filter-bar .pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      STATE.filter = pill.dataset.filter;
+      renderItemsTable();
+    });
+  });
+
+  document.querySelectorAll('#tbl-itens th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if(STATE.sortKey === key){
+        STATE.sortDir = STATE.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        STATE.sortKey = key;
+        STATE.sortDir = 'asc';
+      }
+      renderItemsTable();
+    });
+  });
+
+  document.getElementById('debug-toggle').addEventListener('click', () => {
+    const panel = document.getElementById('debug-panel');
+    panel.classList.toggle('open');
+    document.getElementById('debug-toggle').textContent = panel.classList.contains('open')
+      ? '▾ Ocultar texto extraído do PDF (debug)'
+      : '▸ Ver texto extraído do PDF (debug)';
+  });
+}
+
+wireEvents();
+</script>
+</body>
+</html>
