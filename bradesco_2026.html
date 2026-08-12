@@ -1,0 +1,2700 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Correção de Documentos — Bradesco | Grupo Global Care</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f0f0;color:#333;min-height:100vh}
+
+/* ===== HEADER ===== */
+.header{background:#e41f1b;color:#fff;padding:14px 32px;display:flex;align-items:center;gap:14px}
+.header .icon{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.header h1{font-size:18px;font-weight:600;flex:1;letter-spacing:.3px}
+.header .brand{font-size:13px;opacity:.85;font-weight:500}
+
+/* ===== TABS ===== */
+.tabs{background:#fff;border-bottom:2px solid #eee;padding:0 32px;display:flex;gap:0}
+.tab-btn{padding:14px 24px;border:none;background:none;font-size:14px;font-weight:500;color:#666;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:.2s}
+.tab-btn:hover{color:#e41f1b}
+.tab-btn.active{color:#e41f1b;border-bottom-color:#e41f1b;font-weight:600}
+
+/* ===== MAIN ===== */
+.main{max-width:1100px;margin:24px auto;padding:0 24px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:32px;margin-bottom:24px}
+.card h2{font-size:18px;font-weight:700;color:#333;margin-bottom:6px}
+.card .subtitle{font-size:14px;color:#666;margin-bottom:20px}
+
+/* ===== INFO BAR ===== */
+.info-bar{background:#fef3f3;border:1px solid #f5d0d0;border-radius:8px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:14px;color:#c0392b}
+.info-bar .circle{width:20px;height:20px;border:2px solid #e41f1b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#e41f1b}
+.info-bar a{color:#e41f1b;cursor:pointer;text-decoration:none;font-weight:600;margin-left:4px}
+.info-bar a:hover{text-decoration:underline}
+
+/* ===== ENTITY SELECTOR ===== */
+.field{margin-bottom:20px}
+.field label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px}
+.field select,.field input{width:100%;max-width:440px;padding:10px 14px;border:1.5px solid #ccc;border-radius:8px;font-size:14px;color:#333;background:#fff;outline:none;transition:.2s}
+.field select:focus,.field input:focus{border-color:#e41f1b;box-shadow:0 0 0 3px rgba(228,31,27,.1)}
+
+/* ===== UPLOAD ZONE ===== */
+.upload-zone{border:2.5px dashed #e41f1b;border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:.2s;background:#fefefe}
+.upload-zone:hover,.upload-zone.drag-over{background:#fef8f8;border-color:#c0392b}
+.upload-zone .arrow{font-size:36px;color:#ccc;margin-bottom:12px}
+.upload-zone p{font-size:15px;color:#666}
+.upload-zone small{font-size:12px;color:#999;margin-top:6px;display:block}
+.upload-zone.has-file{border-style:solid;border-color:#27ae60;background:#f0faf4}
+.upload-zone.has-file .arrow{color:#27ae60}
+
+/* ===== PROCESSING ===== */
+.processing{text-align:center;padding:40px;display:none}
+.processing .spinner{width:40px;height:40px;border:4px solid #eee;border-top-color:#e41f1b;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== RESULTS ===== */
+.results{display:none}
+.results .summary-bar{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.results .summary-box{flex:1;min-width:160px;padding:16px;border-radius:8px;text-align:center}
+.summary-box.old{background:#f5f5f5;border:1px solid #ddd}
+.summary-box.new{background:#e8f5e9;border:1px solid #a5d6a7}
+.summary-box.changes{background:#fff3e0;border:1px solid #ffcc80}
+.summary-box .label{font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.5px}
+.summary-box .value{font-size:22px;font-weight:700;margin-top:4px}
+.summary-box.old .value{color:#999}
+.summary-box.new .value{color:#2e7d32}
+.summary-box.changes .value{color:#e65100}
+
+/* ===== TABLES ===== */
+.tbl-wrap{overflow-x:auto;margin-bottom:16px}
+table.data{width:100%;border-collapse:collapse;font-size:13px}
+table.data th{background:#f8f8f8;padding:10px 12px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #ddd;white-space:nowrap}
+table.data td{padding:9px 12px;border-bottom:1px solid #eee;vertical-align:top}
+table.data tr:hover{background:#fafafa}
+table.data tr.changed{background:#fffde7}
+table.data tr.changed:hover{background:#fff9c4}
+table.data .code{font-family:'Consolas','Courier New',monospace;font-size:12px;color:#555}
+table.data .price{text-align:right;white-space:nowrap}
+table.data .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.updated{background:#e8f5e9;color:#2e7d32}
+.badge.kept{background:#f5f5f5;color:#999}
+.badge.new-code{background:#e3f2fd;color:#1565c0}
+.badge.error{background:#ffebee;color:#c62828}
+.section-title{font-size:14px;font-weight:700;color:#e41f1b;margin:20px 0 8px;padding-bottom:6px;border-bottom:2px solid #fce4ec}
+
+/* ===== ACTIONS ===== */
+.actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.btn{padding:12px 28px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:#e41f1b;color:#fff}
+.btn-primary:hover{background:#c0392b}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed}
+.btn-secondary{background:#fff;color:#555;border:1.5px solid #ccc}
+.btn-secondary:hover{background:#f8f8f8;border-color:#999}
+.btn-success{background:#27ae60;color:#fff}
+.btn-success:hover{background:#219a52}
+
+/* ===== HISTORY ===== */
+.hist-row{cursor:pointer;transition:.1s}
+.hist-row:hover{background:#fef8f8 !important}
+.hist-row td:first-child{color:#e41f1b;font-weight:500}
+.hist-status{font-weight:700;font-size:12px}
+.hist-status.ok{color:#27ae60}
+.hist-status.err{color:#c62828}
+.hist-detail{display:none;background:#fafafa}
+.hist-detail.open{display:table-row}
+.hist-detail td{padding:16px 20px;font-size:12px}
+.hist-detail .detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+.hist-detail .detail-item{display:flex;justify-content:space-between;padding:4px 8px;background:#fff;border-radius:4px;border:1px solid #eee}
+.hist-detail .detail-item .old{color:#999;text-decoration:line-through}
+.hist-detail .detail-item .new{color:#2e7d32;font-weight:600}
+.hist-empty{text-align:center;padding:40px;color:#999;font-size:14px}
+
+/* ===== BASE OFICIAL ===== */
+.search-bar{margin-bottom:16px;position:relative}
+.search-bar input{width:100%;padding:10px 14px 10px 38px;border:1.5px solid #ddd;border-radius:8px;font-size:14px}
+.search-bar::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px}
+.category-pills{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.pill{padding:6px 16px;border-radius:20px;font-size:13px;border:1.5px solid #ddd;background:#fff;cursor:pointer;transition:.2s}
+.pill:hover{border-color:#e41f1b;color:#e41f1b}
+.pill.active{background:#e41f1b;color:#fff;border-color:#e41f1b}
+
+/* ===== BASE MGMT ===== */
+.warn-bar{background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 18px;margin-bottom:20px;font-size:13px;color:#e65100}
+.warn-bar strong{color:#bf360c}
+.mgmt-buttons{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.mgmt-btn{padding:8px 16px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.mgmt-btn:hover{border-color:#e41f1b;color:#e41f1b}
+.mgmt-btn.reimport{border-color:#e41f1b;color:#e41f1b;font-weight:600}
+.mgmt-btn.reimport:hover{background:#fef3f3}
+.base-count{text-align:right;color:#999;font-size:13px;margin-bottom:10px}
+.add-form{border:1.5px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;display:none;background:#fafafa}
+.add-form.open{display:block}
+.add-form h3{font-size:14px;margin-bottom:12px;color:#555;cursor:pointer}
+.add-form .form-row{display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.add-form .form-row input,.add-form .form-row select{padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:13px;flex:1;min-width:120px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .header{padding:12px 16px}
+  .header h1{font-size:15px}
+  .tabs{padding:0 16px}
+  .tab-btn{padding:12px 16px;font-size:13px}
+  .main{padding:0 12px;margin:16px auto}
+  .card{padding:20px}
+  .results .summary-bar{flex-direction:column}
+}
+
+/* ===== TAB CONTENT ===== */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ===== HEADER EXTRAS (colaborador / status de conexão) ===== */
+.header .conn-chip{font-size:12px;padding:4px 10px;border-radius:14px;background:rgba(255,255,255,.15);white-space:nowrap}
+.header .user-chip{font-size:12px;padding:4px 10px;border-radius:14px;background:rgba(255,255,255,.15);white-space:nowrap;cursor:pointer;border:none;color:#fff}
+.header .user-chip:hover{background:rgba(255,255,255,.25)}
+@media(max-width:768px){
+  .header .conn-chip,.header .user-chip{display:none}
+}
+
+/* ===== NAME MODAL ===== */
+.name-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:9999;display:none}
+.name-overlay.open{display:flex}
+.name-modal{background:#fff;border-radius:12px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.name-modal h3{font-size:16px;margin-bottom:6px;color:#333}
+.name-modal p{font-size:13px;color:#666;margin-bottom:16px}
+.name-modal input{width:100%;padding:10px 14px;border:1.5px solid #ccc;border-radius:8px;font-size:14px;outline:none}
+.name-modal input:focus{border-color:#e41f1b;box-shadow:0 0 0 3px rgba(228,31,27,.1)}
+.name-modal .modal-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.name-modal .modal-actions button{padding:8px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none}
+.name-modal .modal-actions .btn-save{background:#e41f1b;color:#fff}
+.name-modal .modal-actions .btn-save:hover{background:#c0392b}
+.name-modal .modal-actions .btn-skip{background:#f0f0f0;color:#666}
+.name-modal .modal-actions .btn-skip:hover{background:#e0e0e0}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="icon">📄</div>
+  <h1>Correção de Documentos — Bradesco</h1>
+  <span class="conn-chip" id="conn-status">● verificando...</span>
+  <button class="user-chip" id="user-name-display" onclick="changeUserName()" title="Clique para alterar seu nome">👤 —</button>
+  <span class="brand">Grupo Global Care</span>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="documento">Documento</button>
+  <button class="tab-btn" data-tab="base">Base Oficial</button>
+  <button class="tab-btn" data-tab="historico">Histórico</button>
+</nav>
+
+<div class="main">
+
+<!-- ===================== TAB: DOCUMENTO ===================== -->
+<div id="tab-documento" class="tab-content active">
+  <div class="card">
+    <h2>CORREÇÃO DE DOCUMENTOS — BRADESCO</h2>
+    <p class="subtitle">Faça o upload do documento que deseja validar e corrigir com base nos contratos e tabelas vigentes.</p>
+
+    <div class="info-bar">
+      <div class="circle">i</div>
+      <span>Base oficial: <strong id="base-count">0</strong> itens cadastrados (<span id="base-vigentes">0</span> vigentes). <a onclick="switchTab('base')">Gerenciar</a></span>
+    </div>
+
+    <div class="field">
+      <label>Entidade</label>
+      <select id="entity-select">
+        <option value="SP">Global Care SP (CNPJ 03.872.790/0001-93)</option>
+        <option value="BA">DN Global BA (CNPJ 28.451.893/0001-00)</option>
+      </select>
+    </div>
+
+    <div class="upload-zone" id="upload-zone">
+      <div class="arrow">↑</div>
+      <p>Arraste o arquivo ou clique para selecionar</p>
+      <small>PDF — máx. 50 MB</small>
+      <input type="file" id="file-input" accept=".pdf" style="display:none">
+    </div>
+
+    <div class="processing" id="processing">
+      <div class="spinner"></div>
+      <p>Processando documento...</p>
+      <small>Extraindo dados e aplicando correções</small>
+    </div>
+
+    <div class="results" id="results">
+      <h2 style="margin-bottom:4px" id="result-patient"></h2>
+      <p class="subtitle" id="result-info"></p>
+
+      <div class="summary-bar">
+        <div class="summary-box old">
+          <div class="label">Total Original</div>
+          <div class="value" id="total-old">R$ 0,00</div>
+        </div>
+        <div class="summary-box new">
+          <div class="label">Total Corrigido</div>
+          <div class="value" id="total-new">R$ 0,00</div>
+        </div>
+        <div class="summary-box changes">
+          <div class="label">Alterações</div>
+          <div class="value" id="total-changes">0</div>
+        </div>
+      </div>
+
+      <div class="section-title">ATENDIMENTO PROFISSIONAL</div>
+      <div class="tbl-wrap">
+        <table class="data" id="tbl-atend">
+          <thead><tr><th>Descrição</th><th>Código Antigo</th><th>Código 2026</th><th class="price">Preço Antigo</th><th class="price">Preço 2026</th><th>Qtd</th><th class="price">Total 2026</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="section-equip" style="display:none">
+        <div class="section-title">EQUIPAMENTO MOBILIÁRIO</div>
+        <div class="tbl-wrap">
+          <table class="data" id="tbl-equip">
+            <thead><tr><th>Descrição</th><th>Código</th><th class="price">Preço Antigo</th><th class="price">Preço 2026</th><th>Desc%</th><th>Qtd</th><th class="price">Total 2026</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-title">MEDICAMENTOS</div>
+      <div class="tbl-wrap">
+        <table class="data" id="tbl-med">
+          <thead><tr><th>Descrição</th><th>Código</th><th class="price">Preço Antigo</th><th class="price">Preço 2026</th><th>Desc%</th><th>Qtd</th><th class="price">Total 2026</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="section-title">MATERIAIS</div>
+      <div class="tbl-wrap">
+        <table class="data" id="tbl-mat">
+          <thead><tr><th>Descrição</th><th>Código</th><th class="price">Preço Tabela</th><th>Desc%</th><th>Qtd</th><th class="price">Total</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="section-dietas" style="display:none">
+        <div class="section-title">DIETAS</div>
+        <div class="tbl-wrap">
+          <table class="data" id="tbl-diet">
+            <thead><tr><th>Descrição</th><th>Código</th><th class="price">Preço Antigo</th><th class="price">Preço 2026</th><th>Qtd</th><th class="price">Total 2026</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-generate" onclick="generatePDF()">📥 Gerar PDF Corrigido</button>
+        <button class="btn btn-secondary" id="btn-comparativo" onclick="generateComparativoPDF()">📊 Comparativo (Equipe)</button>
+        <button class="btn btn-secondary" id="btn-reprocess" onclick="reprocessFile()">🔄 Reprocessar</button>
+        <button class="btn btn-secondary" onclick="resetUpload()">↩ Novo Documento</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB: BASE OFICIAL ===================== -->
+<div id="tab-base" class="tab-content">
+  <div class="card">
+    <h2>BASE OFICIAL — BRADESCO</h2>
+    <p class="subtitle">Cadastre os itens oficiais (códigos, nomenclaturas, valores) que serão utilizados de fonte de validação. Somente dados cadastrados aqui serão usados para corrigir documentos.</p>
+
+    <div class="warn-bar">
+      <strong>Importante:</strong> A base oficial é compartilhada via Supabase entre todos os usuários do time.
+      Caso a conexão fique indisponível, os dados ficam salvos localmente neste navegador como contingência e são sincronizados novamente assim que a conexão voltar.
+    </div>
+
+    <div class="mgmt-buttons">
+      <button class="mgmt-btn" onclick="importCSV()">&#8593; Importar CSV</button>
+      <button class="mgmt-btn" onclick="exportCSV()">&#8595; Exportar CSV</button>
+      <button class="mgmt-btn" onclick="exportJSON()">&#60;&#62; Exportar JSON</button>
+      <button class="mgmt-btn" onclick="importJSON()">&#60;&#62; Importar JSON</button>
+      <button class="mgmt-btn reimport" onclick="reimportBase()">&#8635; Reimportar Base Oficial 2026</button>
+      <span class="base-count" id="base-count-mgmt"></span>
+    </div>
+
+    <div class="add-form" id="add-form">
+      <h3 onclick="toggleAddForm()">+ Adicionar item</h3>
+      <div class="form-row">
+        <input type="text" id="add-code" placeholder="Código">
+        <input type="text" id="add-desc" placeholder="Descrição">
+        <select id="add-cat">
+          <option value="Serviço">Serviço</option>
+          <option value="Equipamento">Equipamento</option>
+          <option value="Medicamento">Medicamento</option>
+          <option value="Dieta">Dieta</option>
+        </select>
+        <input type="text" id="add-price" placeholder="Preço (ex: 42,50)">
+        <input type="text" id="add-unit" placeholder="Unidade">
+        <button class="btn btn-primary" style="padding:8px 20px" onclick="addItem()">Adicionar</button>
+      </div>
+    </div>
+
+    <div id="add-toggle" style="margin-bottom:16px">
+      <a href="#" onclick="toggleAddForm();return false" style="color:#e41f1b;font-weight:600;font-size:14px">&#9654; + Adicionar item</a>
+    </div>
+
+    <div class="field" style="max-width:280px">
+      <label>Entidade</label>
+      <select id="base-entity" onchange="renderBase()">
+        <option value="SP">Global Care SP</option>
+        <option value="BA">DN Global BA</option>
+      </select>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="base-search" placeholder="Buscar por código, descrição ou categoria..." oninput="renderBase()">
+    </div>
+
+    <div class="category-pills" id="category-pills"></div>
+
+    <div class="tbl-wrap">
+      <table class="data" id="tbl-base">
+        <thead><tr><th>Código</th><th>Descrição</th><th>Categoria</th><th class="price">Preço (R$)</th><th>Unidade</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB: HISTÓRICO ===================== -->
+<div id="tab-historico" class="tab-content">
+  <div class="card">
+    <h2>Histórico de Processamento</h2>
+    <p class="subtitle">Registro de todos os documentos processados pela equipe (base compartilhada via Supabase).</p>
+
+    <div class="tbl-wrap">
+      <table class="data" id="tbl-hist">
+        <thead><tr><th>Data/Hora</th><th>Arquivo</th><th>Status</th><th>Alterações</th><th class="price">Total Original</th><th class="price">Total Corrigido</th></tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+    <div class="hist-empty" id="hist-empty">Nenhum documento processado ainda.</div>
+
+    <div class="actions" style="margin-top:16px">
+      <button class="btn btn-secondary" onclick="clearHistory()">🗑 Limpar Histórico</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- .main -->
+
+<!-- ===== MODAL: NOME DO COLABORADOR ===== -->
+<div class="name-overlay" id="name-overlay">
+  <div class="name-modal">
+    <h3>Bem-vindo(a)!</h3>
+    <p>Informe seu nome para identificar seus processamentos no historico compartilhado.</p>
+    <input type="text" id="name-input" placeholder="Seu nome (ex: Ana, Carlos...)" autofocus onkeydown="if(event.key==='Enter')saveName()">
+    <div class="modal-actions">
+      <button class="btn-skip" onclick="skipName()">Pular</button>
+      <button class="btn-save" onclick="saveName()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== BIBLIOTECAS (CDN) ===================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+<script>
+// ================================================================
+// BASE DE DADOS — CÓDIGOS 2026 (BRADESCO SP)
+// ================================================================
+// ================================================================
+// BASE PADRÃO COMPLETA — BRADESCO 2026 (Anexos IV + V + VI)
+// ================================================================
+const DEFAULT_BASE_SP = [
+  // === ANEXO IV — SERVIÇOS (24 itens) ===
+  {code:'81095058',cat:'Servico',desc:'MEDICACAO EV 1X DIA',price:90.00,unit:'taxa'},
+  {code:'81095066',cat:'Servico',desc:'REMOCAO SIMPLES - IDA',price:368.18,unit:'ida'},
+  {code:'81095074',cat:'Servico',desc:'REMOCAO SIMPLES - IDA E VOLTA',price:631.86,unit:'ida e volta'},
+  {code:'81095082',cat:'Servico',desc:'REMOCAO UTI - IDA',price:769.07,unit:'ida'},
+  {code:'81095090',cat:'Servico',desc:'REMOCAO UTI - IDA E VOLTA',price:1430.89,unit:'ida e volta'},
+  {code:'81095236',cat:'Servico',desc:'ENFERMAGEM EXCLUSIVA 06HS',price:139.53,unit:'visita'},
+  {code:'81095244',cat:'Servico',desc:'ENFERMAGEM EXCLUSIVA 12HS',price:216.47,unit:'visita'},
+  {code:'81095252',cat:'Servico',desc:'ENFERMAGEM EXCLUSIVA 24HS',price:415.00,unit:'visita'},
+  {code:'81095694',cat:'Servico',desc:'FISIOTERAPIA DOMICILIAR',price:90.00,unit:'visita'},
+  {code:'81095708',cat:'Servico',desc:'FISIOTERAPIA DOMICILIAR ESPECIALIZADA',price:160.79,unit:'visita'},
+  {code:'81095716',cat:'Servico',desc:'FONOTERAPIA DOMICILIAR',price:132.27,unit:'visita'},
+  {code:'81095724',cat:'Servico',desc:'FONOTERAPIA DOMICILIAR ESPECIALIZADA',price:180.00,unit:'visita'},
+  {code:'81095732',cat:'Servico',desc:'NUTRICIONISTA DOMICILIAR',price:82.50,unit:'visita'},
+  {code:'81095740',cat:'Servico',desc:'NUTRICIONISTA DOMICILIAR ESPECIALISTA',price:111.93,unit:'visita'},
+  {code:'81095759',cat:'Servico',desc:'PSICOLOGIA DOMICILIAR',price:90.00,unit:'visita'},
+  {code:'81095767',cat:'Servico',desc:'PSICOLOGIA DOMICILIAR ESPECIALIZADA',price:115.52,unit:'visita'},
+  {code:'81095775',cat:'Servico',desc:'TERAPIA OCUPACIONAL DOMICILIAR',price:140.00,unit:'visita'},
+  {code:'81095783',cat:'Servico',desc:'TERAPIA OCUPACIONAL DOMICILIAR ESPECIALIZADA',price:145.00,unit:'visita'},
+  {code:'81095791',cat:'Servico',desc:'VISITA ASSISTENTE SOCIAL',price:89.25,unit:'visita'},
+  {code:'81095805',cat:'Servico',desc:'VISITA DE ENFERMEIRO DOMICILIAR',price:97.00,unit:'visita'},
+  {code:'81095813',cat:'Servico',desc:'VISITA DE ENFERMEIRO DOMICILIAR ESPECIALISTA',price:115.09,unit:'visita'},
+  {code:'81095821',cat:'Servico',desc:'VISITA DOMICILIAR DE TECNICO DE ENFERMAGEM',price:68.00,unit:'visita'},
+  {code:'81095830',cat:'Servico',desc:'VISITA MEDICA DOMICILIAR',price:331.42,unit:'visita'},
+  {code:'81095848',cat:'Servico',desc:'VISITA MEDICA DOMICILIAR ESPECIALISTA',price:400.00,unit:'visita'},
+  // === ANEXO IV — EQUIPAMENTOS (25 itens) ===
+  {code:'81095104',cat:'Equipamento',desc:'ANDADOR',price:1.85,unit:'diaria'},
+  {code:'81095112',cat:'Equipamento',desc:'BENGALA',price:1.06,unit:'diaria'},
+  {code:'81095120',cat:'Equipamento',desc:'BERCO HOSPITALAR COM COLCHAO',price:3.50,unit:'diaria'},
+  {code:'81095139',cat:'Equipamento',desc:'CADEIRA DE RODAS',price:3.15,unit:'diaria'},
+  {code:'81095147',cat:'Equipamento',desc:'CADEIRA DE RODAS OBESO/ELEVACAO',price:4.77,unit:'diaria'},
+  {code:'81095155',cat:'Equipamento',desc:'CADEIRA HIGIENICA',price:2.13,unit:'diaria'},
+  {code:'81095163',cat:'Equipamento',desc:'CADEIRA HIGIENICA OBESO/ELEVACAO',price:3.65,unit:'diaria'},
+  {code:'81095171',cat:'Equipamento',desc:'CAMA ELETRICA',price:12.89,unit:'diaria'},
+  {code:'81095180',cat:'Equipamento',desc:'CAMA MANUAL',price:4.50,unit:'diaria'},
+  {code:'81095198',cat:'Equipamento',desc:'COLCHAO PNEUMATICO',price:3.50,unit:'diaria'},
+  {code:'81095201',cat:'Equipamento',desc:'CONCENTRADOR DE O2',price:15.00,unit:'diaria'},
+  {code:'81095210',cat:'Equipamento',desc:'CONCENTRADOR DE O2 PORTATIL',price:7.01,unit:'diaria'},
+  {code:'81095228',cat:'Equipamento',desc:'COUGH ASSIST',price:49.88,unit:'diaria'},
+  {code:'81095260',cat:'Materiais',desc:'EQUIPO (BOMBA DE INFUSAO INCLUSO)',price:24.65,unit:'diaria'},
+  {code:'81095279',cat:'Equipamento',desc:'FRASCO PARA DIETA',price:1.08,unit:'diaria'},
+  {code:'81095287',cat:'Equipamento',desc:'GUINCHO ELETRICO E CESTO',price:19.74,unit:'diaria'},
+  {code:'81095295',cat:'Equipamento',desc:'INALADOR',price:1.80,unit:'diaria'},
+  {code:'81095309',cat:'Equipamento',desc:'MONITOR CARDIACO',price:15.00,unit:'diaria'},
+  {code:'81095317',cat:'Equipamento',desc:'MONITOR DE GLICEMIA',price:2.01,unit:'diaria'},
+  {code:'81095325',cat:'Equipamento',desc:'NEBULIZADOR',price:1.60,unit:'diaria'},
+  {code:'81095333',cat:'Equipamento',desc:'OXIMETRO',price:8.50,unit:'diaria'},
+  {code:'81095341',cat:'Equipamento',desc:'OXIMETRO NEONATAL',price:8.50,unit:'diaria'},
+  {code:'81095570',cat:'Equipamento',desc:'RESERVATORIO O2 LIQUIDO + BOLSA',price:24.40,unit:'diaria'},
+  {code:'81095589',cat:'Equipamento',desc:'RX DOMICILIAR',price:172.02,unit:'evento'},
+  {code:'81095597',cat:'Equipamento',desc:'TENS',price:12.00,unit:'diaria'},
+  {code:'EQ001',cat:'Equipamento',desc:'SUPORTE DE SORO',price:0,unit:'diaria'},
+  {code:'EQ002',cat:'Equipamento',desc:'BOMBA DE INFUSAO ENTERAL',price:0,unit:'diaria'},
+  {code:'EQ003',cat:'Equipamento',desc:'TOMADA DUPLA',price:0,unit:'diaria'},
+  {code:'EQ004',cat:'Equipamento',desc:'BIPAP STELLAR',price:15.48,unit:'diaria'},
+  {code:'81095490',cat:'Materiais',desc:'PACOTE PARA ADMINISTRACAO DE DIETA (EQUIPO, FRASCO, SERINGA E DEMAIS INSUMOS)',price:55.00,unit:'pacote'},
+  {code:'81095503',cat:'Materiais',desc:'PACOTE PARA ASPIRACAO (ASPIRADOR, SONDA DE ASPIRACAO, LUVA DE PROCEDIMENTO, LUVA ESTERIL E DEMAIS INSUMOS)',price:8.20,unit:'pacote'},
+  // === DIARIAS GLOBAIS (8 itens) ===
+  {code:'80031552',cat:'Diaria',desc:'DIARIA GLOBAL 24HS COM VM INVASIVA CONTINUA',price:1292.00,unit:'diaria'},
+  {code:'80031528',cat:'Diaria',desc:'DIARIA GLOBAL 12HS',price:700.00,unit:'diaria'},
+  {code:'80031544',cat:'Diaria',desc:'DIARIA GLOBAL 24HS',price:1040.00,unit:'diaria'},
+  {code:'80031587',cat:'Diaria',desc:'DIARIA GLOBAL 6HS',price:377.18,unit:'diaria'},
+  {code:'80031560',cat:'Diaria',desc:'DIARIA GLOBAL 24HS VM INVASIVA PEDIATRIA',price:1340.00,unit:'diaria'},
+  {code:'80031536',cat:'Diaria',desc:'DIARIA GLOBAL 12HS PEDIATRIA',price:750.00,unit:'diaria'},
+  {code:'80031579',cat:'Diaria',desc:'DIARIA GLOBAL 24HS PEDIATRIA',price:1092.00,unit:'diaria'},
+  {code:'80031595',cat:'Diaria',desc:'DIARIA GLOBAL 6HS PEDIATRIA',price:374.23,unit:'diaria'},
+  // === CURATIVOS (9 itens) ===
+  {code:'81095600',cat:'Servico',desc:'CURATIVO ALTA COMPLEXIDADE 24H',price:112.88,unit:'taxa'},
+  {code:'81095619',cat:'Servico',desc:'CURATIVO ALTA COMPLEXIDADE 48H',price:140.24,unit:'taxa'},
+  {code:'81095627',cat:'Servico',desc:'CURATIVO ALTA COMPLEXIDADE 72H',price:170.30,unit:'taxa'},
+  {code:'81095635',cat:'Servico',desc:'CURATIVO BAIXA COMPLEXIDADE 24H',price:77.42,unit:'taxa'},
+  {code:'81095643',cat:'Servico',desc:'CURATIVO BAIXA COMPLEXIDADE 48H',price:94.13,unit:'taxa'},
+  {code:'81095651',cat:'Servico',desc:'CURATIVO BAIXA COMPLEXIDADE 72H',price:115.43,unit:'taxa'},
+  {code:'81095660',cat:'Servico',desc:'CURATIVO MEDIA COMPLEXIDADE 24H',price:87.03,unit:'taxa'},
+  {code:'81095678',cat:'Servico',desc:'CURATIVO MEDIA COMPLEXIDADE 48H',price:112.89,unit:'taxa'},
+  {code:'81095686',cat:'Servico',desc:'CURATIVO MEDIA COMPLEXIDADE 72H',price:134.93,unit:'taxa'},
+  // === PACOTES (13 itens) ===
+  {code:'81095350',cat:'Servico',desc:'PACOTE CATETERISMO VESICAL DE DEMORA',price:154.48,unit:'evento'},
+  {code:'81095368',cat:'Servico',desc:'PACOTE CLISTER',price:126.00,unit:'evento'},
+  {code:'81095376',cat:'Servico',desc:'PACOTE INSTALACAO PICC',price:2500.00,unit:'evento'},
+  {code:'81095384',cat:'Servico',desc:'PACOTE IRRIGACAO VESICAL',price:175.83,unit:'evento'},
+  {code:'81095392',cat:'Servico',desc:'PACOTE MANUTENCAO PICC',price:61.00,unit:'evento'},
+  {code:'81095406',cat:'Servico',desc:'PACOTE NPT',price:264.32,unit:'diaria'},
+  {code:'81095414',cat:'Servico',desc:'PACOTE SONDAGEM NASOENTERAL/NASOGASTRICA',price:177.38,unit:'evento'},
+  {code:'81095422',cat:'Servico',desc:'PACOTE SONDAGEM RETAL',price:122.21,unit:'evento'},
+  {code:'81095430',cat:'Servico',desc:'PACOTE SONDAGEM VESICAL ALIVIO',price:148.63,unit:'diaria'},
+  {code:'81095449',cat:'Servico',desc:'PACOTE SUPORTE VENTILATORIO CPAP',price:39.00,unit:'diaria'},
+  {code:'81095457',cat:'Servico',desc:'PACOTE SUPORTE VENTILATORIO BIPAP',price:71.54,unit:'diaria'},
+  {code:'81095465',cat:'Servico',desc:'PACOTE SUPORTE VENTILATORIO RESPIRADORES',price:155.10,unit:'diaria'},
+  {code:'81095473',cat:'Servico',desc:'PACOTE TROCA EXTENSOR GTT',price:351.17,unit:'evento'},
+  {code:'81095481',cat:'Servico',desc:'PACOTE TROCA GTT/BOTTON',price:2080.00,unit:'evento'},
+  {code:'81095511',cat:'Servico',desc:'PACOTE RETIRADA SUTURA/PONTOS',price:99.80,unit:'evento'},
+  // === RECARGAS O2 (5 itens) ===
+  {code:'81095520',cat:'Equipamento',desc:'RECARGA O2 10M3',price:134.58,unit:'recarga'},
+  {code:'81095538',cat:'Equipamento',desc:'RECARGA O2 1M3',price:47.00,unit:'recarga'},
+  {code:'81095546',cat:'Equipamento',desc:'RECARGA O2 4M3',price:66.43,unit:'recarga'},
+  {code:'81095554',cat:'Equipamento',desc:'RECARGA O2 6M3',price:90.01,unit:'recarga'},
+  {code:'81095562',cat:'Equipamento',desc:'RECARGA O2 8M3',price:106.70,unit:'recarga'},
+  // === ANEXO V — MEDICAMENTOS IV (58 itens) ===
+  {code:'1000010',cat:'Medicamento',desc:'Amicacina 100mg',price:6.68,unit:'un'},
+  {code:'1000011',cat:'Medicamento',desc:'Amicacina 250mg/ml 2ml',price:9.80,unit:'un'},
+  {code:'1000012',cat:'Medicamento',desc:'Amoxicilina+Clavulanato 1000mg+200mg',price:21.00,unit:'un'},
+  {code:'1000014',cat:'Medicamento',desc:'Anfotericina B 50mg',price:1890.00,unit:'un'},
+  {code:'1000015',cat:'Medicamento',desc:'Anidulafungina 100mg',price:442.65,unit:'un'},
+  {code:'1000016',cat:'Medicamento',desc:'Azitromicina 500mg po injetavel',price:24.70,unit:'un'},
+  {code:'1000017',cat:'Medicamento',desc:'Aztreonam 1g',price:56.26,unit:'un'},
+  {code:'1000018',cat:'Medicamento',desc:'Cancidas (Caspofungina) 50mg',price:1400.00,unit:'un'},
+  {code:'1000019',cat:'Medicamento',desc:'Cancidas (Caspofungina) 70mg',price:1618.44,unit:'un'},
+  {code:'1000021',cat:'Medicamento',desc:'Cefepima 1g',price:35.12,unit:'un'},
+  {code:'1000022',cat:'Medicamento',desc:'Cefepima 2g',price:29.00,unit:'un'},
+  {code:'1000023',cat:'Medicamento',desc:'Ceftazidima+Avibactam 1g',price:1044.98,unit:'un'},
+  {code:'1000024',cat:'Medicamento',desc:'Ceftarolina Fosamila 600mg',price:342.25,unit:'un'},
+  {code:'1000025',cat:'Medicamento',desc:'Ceftriaxona 1g c/ Diluente',price:25.12,unit:'un'},
+  {code:'1000026',cat:'Medicamento',desc:'Ceftriaxona 1g s/ Diluente',price:11.19,unit:'un'},
+  {code:'1000027',cat:'Medicamento',desc:'Cefuroxima 750mg',price:18.33,unit:'un'},
+  {code:'1000028',cat:'Medicamento',desc:'Ciprofloxacino 2mg/ml 200ml',price:45.71,unit:'un'},
+  {code:'1000029',cat:'Medicamento',desc:'Claritromicina 500mg',price:39.89,unit:'un'},
+  {code:'1000030',cat:'Medicamento',desc:'Clindamicina 600mg/4ml',price:7.10,unit:'un'},
+  {code:'1000031',cat:'Medicamento',desc:'Cymevir (Ganciclovir) 500ml',price:143.00,unit:'un'},
+  {code:'1000032',cat:'Medicamento',desc:'Daptomicina 500mg',price:304.90,unit:'un'},
+  {code:'1000033',cat:'Medicamento',desc:'Ertapenem 1g po injetavel',price:330.07,unit:'un'},
+  {code:'1000034',cat:'Medicamento',desc:'Fluconazol 200mg',price:39.40,unit:'un'},
+  {code:'1000035',cat:'Medicamento',desc:'Ganciclovir Sodico 500mg',price:77.10,unit:'un'},
+  {code:'1000036',cat:'Medicamento',desc:'Gentamicina 40mg',price:2.25,unit:'un'},
+  {code:'1000037',cat:'Medicamento',desc:'Imipenem+Cilastatina 500mg',price:60.41,unit:'un'},
+  {code:'1000038',cat:'Medicamento',desc:'Kefox (Cefoxitina) 1g',price:19.50,unit:'un'},
+  {code:'1000039',cat:'Medicamento',desc:'Levofloxacino 500mg 100ml',price:51.80,unit:'un'},
+  {code:'1000040',cat:'Medicamento',desc:'Linezolida 2mg/ml 300ml',price:72.00,unit:'un'},
+  {code:'1000042',cat:'Medicamento',desc:'Meropenem 1g',price:35.10,unit:'un'},
+  {code:'1000043',cat:'Medicamento',desc:'Meropenem 500mg',price:19.00,unit:'un'},
+  {code:'1000044',cat:'Medicamento',desc:'Metronidazol 5mg/ml 100ml',price:8.22,unit:'un'},
+  {code:'1000045',cat:'Medicamento',desc:'Micafungina 100mg',price:418.23,unit:'un'},
+  {code:'1000046',cat:'Medicamento',desc:'Micafungina 50mg',price:285.60,unit:'un'},
+  {code:'1000048',cat:'Medicamento',desc:'Piperacilina+Tazobactam 4g+500mg',price:46.00,unit:'un'},
+  {code:'1000050',cat:'Medicamento',desc:'Ceftalozana+Tazobactam 1+0,5g',price:519.58,unit:'un'},
+  {code:'1000055',cat:'Medicamento',desc:'Vfend IV (Voriconazol) 200mg',price:1806.32,unit:'un'},
+  {code:'1000316',cat:'Medicamento',desc:'Ecalta (Anidulafungina) 100mg',price:669.50,unit:'un'},
+  {code:'1000320',cat:'Medicamento',desc:'Maxcef (Cefepima) 1g',price:240.00,unit:'un'},
+  {code:'1000321',cat:'Medicamento',desc:'Maxcef (Cefepima) 2g',price:108.00,unit:'un'},
+  {code:'1000332',cat:'Medicamento',desc:'Zerbaxa 1+0,5g',price:543.00,unit:'un'},
+  {code:'1000335',cat:'Medicamento',desc:'Tygacil (Tigeciclina) 50mg',price:364.00,unit:'un'},
+  {code:'1000325',cat:'Medicamento',desc:'Invanz (Ertapenem) 1G FA',price:359.62,unit:'un'},
+  {code:'1000054',cat:'Medicamento',desc:'Vancomicina 500mg',price:12.45,unit:'un'},
+  {code:'1000049',cat:'Medicamento',desc:'Polimixina B 500.000 Ui',price:45.00,unit:'un'},
+  {code:'1000051',cat:'Medicamento',desc:'Teicoplanina 200mg',price:87.57,unit:'un'},
+  {code:'1000052',cat:'Medicamento',desc:'Teicoplanina 400mg',price:91.95,unit:'un'},
+  {code:'1000053',cat:'Medicamento',desc:'Tigeciclina 50mg (generico)',price:182.15,unit:'un'},
+  {code:'1000314',cat:'Medicamento',desc:'Clavulin IV 1g+200mg',price:47.54,unit:'un'},
+  {code:'1000317',cat:'Medicamento',desc:'Acetato de Caspofungina 50mg',price:1576.72,unit:'un'},
+  {code:'1000318',cat:'Medicamento',desc:'Acetato de Caspofungina 70mg',price:3144.12,unit:'un'},
+  {code:'1000322',cat:'Medicamento',desc:'TORGENA 2,5g',price:1089.91,unit:'un'},
+  {code:'1000324',cat:'Medicamento',desc:'Cubicin (Daptomicina) 500mg',price:368.13,unit:'un'},
+  {code:'1000326',cat:'Medicamento',desc:'Cefoxitina Sodica 1g',price:16.70,unit:'un'},
+  {code:'1000327',cat:'Medicamento',desc:'Zyvox (Linezolida) 2mg/ml 300ml',price:303.45,unit:'un'},
+  {code:'1000333',cat:'Medicamento',desc:'TEIPLAN 200mg',price:106.77,unit:'un'},
+  {code:'1000334',cat:'Medicamento',desc:'TEIPLAN 400mg',price:214.20,unit:'un'},
+  {code:'1000336',cat:'Medicamento',desc:'Voriconazol 200mg (generico)',price:652.17,unit:'un'},
+  // === ANEXO VI — DIETAS (251 itens) ===
+  {code:'1000056',cat:'Dieta',desc:'ALFAMINO FORMULA INFANTIL',price:290.01,unit:'lata 400g'},
+  {code:'1000057',cat:'Dieta',desc:'ALFARE FORMULA INFANTIL',price:175.77,unit:'lata 400g'},
+  {code:'1000058',cat:'Dieta',desc:'APTAMIL ESPESSADO 800G',price:75.45,unit:'lata 800g'},
+  {code:'1000059',cat:'Dieta',desc:'APTAMIL PEPTI',price:67.50,unit:'400g'},
+  {code:'1000060',cat:'Dieta',desc:'APTAMIL PRE PROEXPERT 400G',price:53.94,unit:'lata 400g'},
+  {code:'1000061',cat:'Dieta',desc:'APTAMIL PRE PROEXPERT TRANSITION 400G',price:90.00,unit:'lata 400g'},
+  {code:'1000062',cat:'Dieta',desc:'APTAMIL PREMIUM 1 400G',price:39.60,unit:'lata 400g'},
+  {code:'1000063',cat:'Dieta',desc:'APTAMIL PREMIUM 1 800G',price:69.30,unit:'lata 800g'},
+  {code:'1000064',cat:'Dieta',desc:'APTAMIL PREMIUM 2 400G',price:39.62,unit:'lata 400g'},
+  {code:'1000065',cat:'Dieta',desc:'APTAMIL PREMIUM 2 800G',price:70.68,unit:'lata 800g'},
+  {code:'1000066',cat:'Dieta',desc:'APTAMIL PROEXPERT PEPTI 400G',price:88.48,unit:'lata 400g'},
+  {code:'1000067',cat:'Dieta',desc:'APTAMIL PROEXPERT PEPTI 800G',price:135.25,unit:'lata 800g'},
+  {code:'1000068',cat:'Dieta',desc:'APTAMIL PROEXPERT SEM LACTOSE 400G',price:60.60,unit:'lata 400g'},
+  {code:'1000069',cat:'Dieta',desc:'APTAMIL PROEXPERT SEM LACTOSE 800G',price:112.80,unit:'lata 800g'},
+  {code:'1000070',cat:'Dieta',desc:'APTAMIL PROEXPERT SOJA 400G',price:57.12,unit:'lata 400g'},
+  {code:'1000071',cat:'Dieta',desc:'APTAMIL PROEXPERT SOJA 800G',price:88.19,unit:'lata 800g'},
+  {code:'1000072',cat:'Dieta',desc:'APTAMIL PROFUTURA 1 400G',price:56.43,unit:'lata 400g'},
+  {code:'1000073',cat:'Dieta',desc:'APTAMIL PROFUTURA 1 800G',price:99.58,unit:'lata 800g'},
+  {code:'1000074',cat:'Dieta',desc:'APTAMIL PROFUTURA 2 800G',price:93.26,unit:'lata 800g'},
+  {code:'1000075',cat:'Dieta',desc:'APTAMIL PROFUTURA GOLD 1 800G',price:119.56,unit:'lata 800g'},
+  {code:'1000076',cat:'Dieta',desc:'APTAMIL PROFUTURA GOLD 2 800G',price:118.80,unit:'lata 800g'},
+  {code:'1000077',cat:'Dieta',desc:'APTAMIL RR 400G',price:46.24,unit:'lata 400g'},
+  {code:'1000078',cat:'Dieta',desc:'APTAMIL RR 800G',price:83.16,unit:'lata 800g'},
+  {code:'1000079',cat:'Dieta',desc:'APTAMIL SENSITIVE ACTIVE 800G',price:93.13,unit:'lata 800g'},
+  {code:'1000080',cat:'Dieta',desc:'APTAMIL SOJA 2',price:44.00,unit:'lata 400g'},
+  {code:'1000081',cat:'Dieta',desc:'APTANUTRI PREMIUN 3 800G',price:67.53,unit:'lata 800g'},
+  {code:'1000082',cat:'Dieta',desc:'APTANUTRI PROFUTURA 3 800G',price:89.12,unit:'lata 800g'},
+  {code:'1000083',cat:'Dieta',desc:'APTANUTRI SOJA 3 800G',price:89.60,unit:'lata 800g'},
+  {code:'1000084',cat:'Dieta',desc:'ASCENDA SEM SABOR',price:92.07,unit:'lata 800g'},
+  {code:'1000085',cat:'Dieta',desc:'CALOGEN SEM SABOR',price:52.92,unit:'frasco 200ml'},
+  {code:'1000086',cat:'Dieta',desc:'CARBOCH',price:31.18,unit:'lata 400g'},
+  {code:'1000087',cat:'Dieta',desc:'COMPLEAT PEDIATRIC',price:34.36,unit:'frasco 250ml'},
+  {code:'1000088',cat:'Dieta',desc:'CREALIFT ESSENTIAL',price:370.49,unit:'lata 300g'},
+  {code:'1000089',cat:'Dieta',desc:'CUBITAN (INDEPENDENTE DO SABOR)',price:25.92,unit:'frasco 200ml'},
+  {code:'1000090',cat:'Dieta',desc:'DIANUTRI (1.0KCAL/ML) TP',price:42.84,unit:'tp 1000ml'},
+  {code:'1000091',cat:'Dieta',desc:'DIASIP (INDEPENDENTE DO SABOR)',price:18.23,unit:'frasco 200ml'},
+  {code:'1000092',cat:'Dieta',desc:'DIBEN',price:47.30,unit:'bolsa 1000ml'},
+  {code:'1000093',cat:'Dieta',desc:'DIBEN 1.5 HP',price:83.20,unit:'bolsa 1000ml'},
+  {code:'1000094',cat:'Dieta',desc:'ENFAGROW',price:31.07,unit:'lata 800g'},
+  {code:'1000095',cat:'Dieta',desc:'ENFAMIL PREMIUM 1',price:31.50,unit:'lata 800g'},
+  {code:'1000096',cat:'Dieta',desc:'ENFAMIL PREMIUM 2',price:33.24,unit:'lata 900g'},
+  {code:'1000097',cat:'Dieta',desc:'ENSURE PLUS',price:9.52,unit:'tetrapack 200ml'},
+  {code:'1000098',cat:'Dieta',desc:'ENSURE PO',price:34.96,unit:'lata 400g'},
+  {code:'1000099',cat:'Dieta',desc:'ENSURE PROTEIN',price:25.68,unit:'garrafa 220ml'},
+  {code:'1000100',cat:'Dieta',desc:'FORTIFIT',price:70.35,unit:'lata 280g'},
+  {code:'1000101',cat:'Dieta',desc:'FORTIFIT',price:126.28,unit:'lata 600g'},
+  {code:'1000102',cat:'Dieta',desc:'FORTIFIT PRO BAUNILHA',price:121.39,unit:'lata 470g'},
+  {code:'1000103',cat:'Dieta',desc:'FORTINI',price:66.95,unit:'lata 400g'},
+  {code:'1000104',cat:'Dieta',desc:'FORTINI COMPLETE 400G',price:56.53,unit:'lata 800g'},
+  {code:'1000105',cat:'Dieta',desc:'FORTINI COMPLETE 800G',price:83.16,unit:'lata 800g'},
+  {code:'1000106',cat:'Dieta',desc:'FORTINI COMPLETE FORMULA INFANTIL',price:113.86,unit:'lata 800g'},
+  {code:'1000108',cat:'Dieta',desc:'FORTINI PLUS (INDEPENDENTE DO SABOR)',price:61.02,unit:'lata 400g'},
+  {code:'1000109',cat:'Dieta',desc:'FORTINI PLUS MULTI FIBER',price:22.74,unit:'frasco 200ml'},
+  {code:'1000110',cat:'Dieta',desc:'FREBINI ENERGY',price:56.75,unit:'bolsa 500ml'},
+  {code:'1000111',cat:'Dieta',desc:'FREBINI ENERGY DRINK',price:23.30,unit:'frasco 200ml'},
+  {code:'1000112',cat:'Dieta',desc:'FREBINI ENERGY FIBRE',price:56.79,unit:'bolsa 500ml'},
+  {code:'1000113',cat:'Dieta',desc:'FREBINI ENERGY FIBRE DRINK',price:21.30,unit:'frasco 200ml'},
+  {code:'1000114',cat:'Dieta',desc:'FREBINI ORIGINAL',price:56.70,unit:'bolsa 500ml'},
+  {code:'1000115',cat:'Dieta',desc:'FREBINI ORIGINAL FIBRE',price:56.37,unit:'bolsa 500ml'},
+  {code:'1000116',cat:'Dieta',desc:'FRESENIUS PROTEIN POWDER',price:143.85,unit:'lata 300g'},
+  {code:'1000117',cat:'Dieta',desc:'FRESUBIN 1.2 HP FIBRE',price:48.75,unit:'bolsa 1000ml'},
+  {code:'1000118',cat:'Dieta',desc:'FRESUBIN 2.0 CREME FRUTAS DA FLORESTA 125G',price:29.58,unit:'pote 125g'},
+  {code:'1000119',cat:'Dieta',desc:'FRESUBIN 2.0 DRINK',price:21.91,unit:'frasco 200ml'},
+  {code:'1000120',cat:'Dieta',desc:'FRESUBIN 2KCAL HP',price:55.25,unit:'bolsa 500ml'},
+  {code:'1000121',cat:'Dieta',desc:'FRESUBIN 2KCAL HP FIBRE',price:59.85,unit:'bolsa 500ml'},
+  {code:'1000122',cat:'Dieta',desc:'FRESUBIN 3.2KCAL DRINK',price:24.56,unit:'garrafa 125ml'},
+  {code:'1000123',cat:'Dieta',desc:'FRESUBIN 5.0 SHOT CREME 120ML',price:35.91,unit:'120ml'},
+  {code:'1000124',cat:'Dieta',desc:'FRESUBIN ENERGY',price:50.60,unit:'bolsa 1000ml'},
+  {code:'1000125',cat:'Dieta',desc:'FRESUBIN ENERGY DRINK',price:15.75,unit:'frasco 200ml'},
+  {code:'1000126',cat:'Dieta',desc:'FRESUBIN ENERGY FIBRE',price:51.45,unit:'bolsa 1000ml'},
+  {code:'1000127',cat:'Dieta',desc:'FRESUBIN ENERGY SF',price:59.40,unit:'500ml'},
+  {code:'1000128',cat:'Dieta',desc:'FRESUBIN HP ENERGY EASY BAG',price:64.68,unit:'1000ml'},
+  {code:'1000129',cat:'Dieta',desc:'FRESUBIN LP 200ML',price:28.50,unit:'200ml'},
+  {code:'1000130',cat:'Dieta',desc:'FRESUBIN ORIGINAL BOLSA 1000ML',price:42.53,unit:'1000ml'},
+  {code:'1000131',cat:'Dieta',desc:'FRESUBIN ORIGINAL FIBRE',price:43.05,unit:'bolsa 1000ml'},
+  {code:'1000132',cat:'Dieta',desc:'FRESUBIN PROTEIN ENERGY DRINK',price:18.90,unit:'frasco 200ml'},
+  {code:'1000133',cat:'Dieta',desc:'FRESUBIN SOYA FIBRE',price:30.43,unit:'bolsa 1000ml'},
+  {code:'1000134',cat:'Dieta',desc:'GLUCERNA 1.5 RTH SF',price:43.30,unit:'500ml'},
+  {code:'1000135',cat:'Dieta',desc:'GLUCERNA 1.5 TETRAPACK',price:24.59,unit:'200ml'},
+  {code:'1000136',cat:'Dieta',desc:'GLUCERNA BAUNILHA',price:72.76,unit:'400g'},
+  {code:'1000137',cat:'Dieta',desc:'GLUCERNA RPB',price:14.70,unit:'garrafa 200ml'},
+  {code:'1000138',cat:'Dieta',desc:'GLUCERNA RTH',price:68.94,unit:'1000ml'},
+  {code:'1000139',cat:'Dieta',desc:'GLUCERNA SR BAUNILHA',price:111.09,unit:'850g'},
+  {code:'1000140',cat:'Dieta',desc:'GLUCERNA SR TETRAPACK',price:17.00,unit:'230ml'},
+  {code:'1000141',cat:'Dieta',desc:'GLUTAMAX',price:4.69,unit:'sache 5g'},
+  {code:'1000142',cat:'Dieta',desc:'GLUTAMAX',price:9.70,unit:'sache 10g'},
+  {code:'1000143',cat:'Dieta',desc:'GLUTAMAX',price:112.50,unit:'300g'},
+  {code:'1000144',cat:'Dieta',desc:'GLUTAMINA 100%',price:144.89,unit:'lata 300g'},
+  {code:'1000145',cat:'Dieta',desc:'HCU ANAMIX JUNIOR 400G',price:1561.83,unit:'lata 500g'},
+  {code:'1000146',cat:'Dieta',desc:'IMPACT',price:36.63,unit:'tetra slim 200ml'},
+  {code:'1000147',cat:'Dieta',desc:'IMPACT',price:105.70,unit:'tetra square 1000ml'},
+  {code:'1000148',cat:'Dieta',desc:'INFATRINI 125ML',price:31.68,unit:'frasco 120ml'},
+  {code:'1000149',cat:'Dieta',desc:'INFATRINI PO',price:138.16,unit:'lata 400g'},
+  {code:'1000150',cat:'Dieta',desc:'ISOSOURCE 1,5 CAL SEM SAC',price:52.12,unit:'tetra square 1000ml'},
+  {code:'1000152',cat:'Dieta',desc:'ISOSOURCE MIX',price:47.50,unit:'tetra square 1000ml'},
+  {code:'1000153',cat:'Dieta',desc:'ISOSOURCE SOYA',price:32.16,unit:'tetra square 1000ml'},
+  {code:'1000154',cat:'Dieta',desc:'ISOSOURCE SOYA FIBER',price:37.10,unit:'tetra square 1000ml'},
+  {code:'1000156',cat:'Dieta',desc:'ISOSOURCE 1.5 BAUNILHA',price:83.75,unit:'sistema fechado 1000ml'},
+  {code:'1000157',cat:'Dieta',desc:'JEVITY HICAL',price:21.67,unit:'lata 237ml'},
+  {code:'1000158',cat:'Dieta',desc:'JEVITY HICAL RTH SF',price:76.90,unit:'1000ml'},
+  {code:'1000159',cat:'Dieta',desc:'JEVITY PLUS',price:14.84,unit:'lata 237ml'},
+  {code:'1000160',cat:'Dieta',desc:'JEVITY PLUS RTH SF',price:69.04,unit:'1000ml'},
+  {code:'1000161',cat:'Dieta',desc:'KETOCAL',price:384.30,unit:'lata 300g'},
+  {code:'1000162',cat:'Dieta',desc:'LEITE NAN EM PO NAN SUPREME 2',price:74.20,unit:'lata 800g'},
+  {code:'1000163',cat:'Dieta',desc:'MCT COM AGE',price:69.30,unit:'250ml'},
+  {code:'1000164',cat:'Dieta',desc:'MCT TRIGLICERIDEOS DE CADEIA MEDIA',price:106.60,unit:'500ml'},
+  {code:'1000165',cat:'Dieta',desc:'MILNUTRI 400G',price:39.24,unit:'lata 400g'},
+  {code:'1000166',cat:'Dieta',desc:'MILNUTRI 800G',price:66.70,unit:'lata 800g'},
+  {code:'1000167',cat:'Dieta',desc:'MILNUTRI PREMIUM',price:52.69,unit:'800g'},
+  {code:'1000168',cat:'Dieta',desc:'MILNUTRI PROFUTURA 800G',price:84.72,unit:'lata 800g'},
+  {code:'1000169',cat:'Dieta',desc:'MILNUTRI SOJA 800G',price:79.20,unit:'lata 800g'},
+  {code:'1000170',cat:'Dieta',desc:'MILNUTRI VITAMINA DE FRUTAS 380G',price:34.77,unit:'lata 380g'},
+  {code:'1000171',cat:'Dieta',desc:'MILNUTRI VITAMINA DE FRUTAS 760G',price:70.26,unit:'lata 760g'},
+  {code:'1000172',cat:'Dieta',desc:'MMA PA ANAMIX INFANT (0 A 3 ANOS)',price:1199.46,unit:'lata 400g'},
+  {code:'1000173',cat:'Dieta',desc:'MMA/PA ANAMIX JUNIOR (ACIMA 3 ANOS)',price:1670.24,unit:'lata 400g'},
+  {code:'1000174',cat:'Dieta',desc:'MODULEN',price:318.15,unit:'400g'},
+  {code:'1000175',cat:'Dieta',desc:'MONOGEN',price:385.37,unit:'lata 400g'},
+  {code:'1000176',cat:'Dieta',desc:'MSUD 2 PRIMA UPGRADE',price:1664.57,unit:'lata 500g'},
+  {code:'1000177',cat:'Dieta',desc:'NAN AR',price:44.80,unit:'lata 800g'},
+  {code:'1000178',cat:'Dieta',desc:'NEO ADVANCE',price:295.98,unit:'lata 400g'},
+  {code:'1000179',cat:'Dieta',desc:'NEO SPOON',price:243.92,unit:'lata 400g'},
+  {code:'1000180',cat:'Dieta',desc:'NEOCATE LCP',price:247.21,unit:'lata 400g'},
+  {code:'1000181',cat:'Dieta',desc:'NEOFORTE (INDEPENDENTE DO SABOR)',price:225.33,unit:'lata 400g'},
+  {code:'1000182',cat:'Dieta',desc:'NESLAC SUPREME',price:90.18,unit:'800g'},
+  {code:'1000183',cat:'Dieta',desc:'NOVA MIL RICE',price:78.43,unit:'400g'},
+  {code:'1000184',cat:'Dieta',desc:'NOVASOURCE GC',price:109.20,unit:'lata 400g'},
+  {code:'1000185',cat:'Dieta',desc:'NOVASOURCE GC',price:50.76,unit:'tetra square 1000ml'},
+  {code:'1000186',cat:'Dieta',desc:'NOVASOURCE GC 1.5 SF',price:146.54,unit:'1000ml'},
+  {code:'1000187',cat:'Dieta',desc:'NOVASOURCE GC TETRA SLIM',price:28.74,unit:'200ml'},
+  {code:'1000188',cat:'Dieta',desc:'NOVASOURCE GI CONTROL',price:81.86,unit:'tetra square 1000ml'},
+  {code:'1000189',cat:'Dieta',desc:'NOVASOURCE SENIOR',price:48.13,unit:'tetra square 1000ml'},
+  {code:'1000190',cat:'Dieta',desc:'NOVASOURCE SENIOR SF',price:125.88,unit:'1000ml'},
+  {code:'1000191',cat:'Dieta',desc:'NOVASOURCE GI CONTROL SISTEMA FECHADO',price:106.45,unit:'1000ml'},
+  {code:'1000192',cat:'Dieta',desc:'NOVASOURCE HI PROTEIN 1,5KCAL',price:91.00,unit:'1000ml'},
+  {code:'1000193',cat:'Dieta',desc:'NOVASOURCE PROLINE',price:21.23,unit:'200ml'},
+  {code:'1000194',cat:'Dieta',desc:'NUMETA G13E BOLSA 3COMP. 300ML',price:472.96,unit:'bolsa'},
+  {code:'1000195',cat:'Dieta',desc:'NUTILIS',price:86.79,unit:'lata 300g'},
+  {code:'1000196',cat:'Dieta',desc:'NUTILIS CLEAR',price:119.63,unit:'lata 175g'},
+  {code:'1000197',cat:'Dieta',desc:'NUTREN 1,5 TETRA SLIM',price:21.57,unit:'200ml'},
+  {code:'1000198',cat:'Dieta',desc:'NUTREN 2,0 BAUNILHA TETRA SLIM',price:29.97,unit:'200ml'},
+  {code:'1000199',cat:'Dieta',desc:'NUTREN ACTIVE PO',price:17.12,unit:'400g'},
+  {code:'1000200',cat:'Dieta',desc:'NUTREN JUNIOR PO',price:61.00,unit:'400g'},
+  {code:'1000201',cat:'Dieta',desc:'NUTREN SENIOR PO',price:48.47,unit:'370g'},
+  {code:'1000202',cat:'Dieta',desc:'NUTREN 1.0 BAUNILHA',price:58.49,unit:'400g'},
+  {code:'1000203',cat:'Dieta',desc:'NUTREN FORTIFY SEM SABOR',price:115.56,unit:'360g'},
+  {code:'1000204',cat:'Dieta',desc:'NUTREN JUST PROTEIN',price:126.00,unit:'280g'},
+  {code:'1000205',cat:'Dieta',desc:'NUTREN JUST PROTEIN',price:7.70,unit:'sache 15g'},
+  {code:'1000206',cat:'Dieta',desc:'NUTREN SENIOR BAUNILHA 200ML',price:16.32,unit:'200ml'},
+  {code:'1000207',cat:'Dieta',desc:'NUTREN SENIOR ZERO LACTOSE BAUNILHA',price:194.25,unit:'740g'},
+  {code:'1000208',cat:'Dieta',desc:'NUTRI CAISEN',price:98.41,unit:'250g'},
+  {code:'1000209',cat:'Dieta',desc:'NUTRI DEXTRIN',price:50.96,unit:'400g'},
+  {code:'1000210',cat:'Dieta',desc:'NUTRI ENTERAL 1.5',price:9.20,unit:'tp 200ml'},
+  {code:'1000211',cat:'Dieta',desc:'NUTRI ENTERAL SOYA 1.2 TP',price:34.65,unit:'tp 1000ml'},
+  {code:'1000212',cat:'Dieta',desc:'NUTRI ENTERAL SOYA FIBER 1.2 TP',price:35.09,unit:'tp 1000ml'},
+  {code:'1000213',cat:'Dieta',desc:'NUTRI HWHEY',price:123.23,unit:'lata 250g'},
+  {code:'1000214',cat:'Dieta',desc:'NUTRI PROTEIN',price:93.35,unit:'pote 250g'},
+  {code:'1000215',cat:'Dieta',desc:'NUTRI R (2.0KCAL/ML)',price:18.22,unit:'tp 200ml'},
+  {code:'1000216',cat:'Dieta',desc:'NUTRI R (2.0KCAL/ML) TP',price:65.94,unit:'tp 1000ml'},
+  {code:'1000217',cat:'Dieta',desc:'NUTRI RD 2.0 (2.0KCAL/ML) TP',price:92.40,unit:'tp 1000ml'},
+  {code:'1000218',cat:'Dieta',desc:'NUTRI RD 2.0 (2.0KCAL/ML) TP 200ML',price:28.33,unit:'tp 200ml'},
+  {code:'1000219',cat:'Dieta',desc:'NUTRI RENAL 2,0',price:18.85,unit:'200ml'},
+  {code:'1000220',cat:'Dieta',desc:'NUTRI TCM',price:106.11,unit:'fr 250ml'},
+  {code:'1000221',cat:'Dieta',desc:'NUTRIDRINK MAX PO',price:73.72,unit:'350g'},
+  {code:'1000222',cat:'Dieta',desc:'NUTRIDRINK COMPACT KIT 4X125ML',price:55.40,unit:'frasco 125ml'},
+  {code:'1000223',cat:'Dieta',desc:'NUTRIDRINK COMPACT PROTEIN KIT 4X125ML',price:45.63,unit:'frasco 125ml'},
+  {code:'1000224',cat:'Dieta',desc:'NUTRIDRINK PROTEIN 200ML',price:20.70,unit:'frasco 200ml'},
+  {code:'1000225',cat:'Dieta',desc:'NUTRIDRINK PROTEIN 350G',price:82.56,unit:'lata 350g'},
+  {code:'1000226',cat:'Dieta',desc:'NUTRIDRINK PROTEIN ADVANCED',price:232.00,unit:'lata 600g'},
+  {code:'1000227',cat:'Dieta',desc:'NUTRIDRINK PROTEIN SEM SABOR 700G',price:134.40,unit:'lata 700g'},
+  {code:'1000228',cat:'Dieta',desc:'NUTRIDRINK PROTEIN SENIOR PO 750G',price:131.15,unit:'lata 750g'},
+  {code:'1000229',cat:'Dieta',desc:'NUTRIDRINK PROTEIN SENIOR PO 380G',price:75.28,unit:'lata 380g'},
+  {code:'1000230',cat:'Dieta',desc:'NUTRINI ENERGY MULTI FIBER',price:93.45,unit:'pack 500ml'},
+  {code:'1000231',cat:'Dieta',desc:'NUTRINI ENERGY MULTI FIBER PB',price:32.56,unit:'pb 200ml'},
+  {code:'1000232',cat:'Dieta',desc:'NUTRINI MAX MULTI FIBER PB',price:31.16,unit:'pb 500ml'},
+  {code:'1000233',cat:'Dieta',desc:'NUTRINI MULTI FIBER',price:83.23,unit:'pack 500ml'},
+  {code:'1000234',cat:'Dieta',desc:'NUTRINI MULTI FIBER PB',price:26.86,unit:'pb 200ml'},
+  {code:'1000235',cat:'Dieta',desc:'NUTRINI PEPTI',price:124.61,unit:'pack 500ml'},
+  {code:'1000236',cat:'Dieta',desc:'NUTRINI STANDARD',price:55.26,unit:'pack 500ml'},
+  {code:'1000237',cat:'Dieta',desc:'NUTRINI STANDARD PB',price:24.09,unit:'pb 200ml'},
+  {code:'1000238',cat:'Dieta',desc:'NUTRISON 1.0',price:45.60,unit:'tetrapack 1 litro'},
+  {code:'1000239',cat:'Dieta',desc:'NUTRISON ADVANCE PROTISON PACK 500ML',price:96.00,unit:'pack 500ml'},
+  {code:'1000240',cat:'Dieta',desc:'NUTRISON ADVANCED CUBISON',price:112.01,unit:'pack 1000ml'},
+  {code:'1000241',cat:'Dieta',desc:'NUTRISON ADVANCED CUBISON TP',price:73.74,unit:'tp 1000ml'},
+  {code:'1000242',cat:'Dieta',desc:'NUTRISON ADVANCED DIASON',price:59.88,unit:'pack 1000ml'},
+  {code:'1000243',cat:'Dieta',desc:'NUTRISON ADVANCED DIASON ENERGY HP',price:96.76,unit:'100ml'},
+  {code:'1000244',cat:'Dieta',desc:'NUTRISON ADVANCED DIASON ENERGY HP 1.5',price:95.48,unit:'pack 1000ml'},
+  {code:'1000245',cat:'Dieta',desc:'NUTRISON ADVANCED DIASON TP',price:45.88,unit:'tp 1000ml'},
+  {code:'1000246',cat:'Dieta',desc:'NUTRISON ADVANCED PEPTISORB',price:108.94,unit:'pack 1000ml'},
+  {code:'1000247',cat:'Dieta',desc:'NUTRISON ENERGY',price:46.96,unit:'pack 1000ml'},
+  {code:'1000248',cat:'Dieta',desc:'NUTRISON ENERGY 1.5',price:56.82,unit:'tetrapack 1 litro'},
+  {code:'1000250',cat:'Dieta',desc:'NUTRISON ENERGY MULTI FIBER 1.5',price:53.55,unit:'tetrapack 1 litro'},
+  {code:'1000251',cat:'Dieta',desc:'NUTRISON ENERGY MULTI FIBER TP',price:47.60,unit:'tp 1000ml'},
+  {code:'1000252',cat:'Dieta',desc:'NUTRISON ENERGY TP',price:43.17,unit:'tp 1000ml'},
+  {code:'1000253',cat:'Dieta',desc:'NUTRISON MULTI FIBER 1.0',price:54.50,unit:'pack 1 litro'},
+  {code:'1000254',cat:'Dieta',desc:'NUTRISON PROTEIN PLUS ENERGY PACK 1000ML',price:90.00,unit:'pack 1000ml'},
+  {code:'1000255',cat:'Dieta',desc:'NUTRISON PROTEIN PLUS ENERGY PACK 500ML',price:52.07,unit:'pack 500ml'},
+  {code:'1000256',cat:'Dieta',desc:'NUTRISON PROTEIN PLUS MULTI FIBER',price:47.90,unit:'pack 1000ml'},
+  {code:'1000257',cat:'Dieta',desc:'NUTRISON SOYA',price:92.12,unit:'lata 800g'},
+  {code:'1000258',cat:'Dieta',desc:'NUTRISON SOYA MULTI FIBER',price:102.47,unit:'lata 800g'},
+  {code:'1000259',cat:'Dieta',desc:'OLIMEL N12E 1000ML',price:1032.08,unit:'bolsa'},
+  {code:'1000260',cat:'Dieta',desc:'OLIMEL N12E 650ML',price:628.93,unit:'bolsa'},
+  {code:'1000261',cat:'Dieta',desc:'OLIMEL N4 1000ML',price:396.25,unit:'bolsa'},
+  {code:'1000262',cat:'Dieta',desc:'OLIMEL N7 1000ML',price:437.28,unit:'bolsa'},
+  {code:'1000263',cat:'Dieta',desc:'OLIMEL N7 2000ML',price:793.09,unit:'bolsa'},
+  {code:'1000264',cat:'Dieta',desc:'OLIMEL N9 1000ML',price:519.00,unit:'bolsa'},
+  {code:'1000265',cat:'Dieta',desc:'OLIMEL N9 2000ML',price:971.25,unit:'bolsa'},
+  {code:'1000266',cat:'Dieta',desc:'OSMOLITE HN RTH SF',price:54.50,unit:'1000ml'},
+  {code:'1000267',cat:'Dieta',desc:'OSMOLITE PLUS HN',price:20.39,unit:'lata 237ml'},
+  {code:'1000268',cat:'Dieta',desc:'PEDIASURE',price:45.72,unit:'lata 400g'},
+  {code:'1000269',cat:'Dieta',desc:'PEPTAMEN 1,5 TETRA PRISMA',price:44.09,unit:'250ml'},
+  {code:'1000270',cat:'Dieta',desc:'PEPTAMEN 1,5 SF ULTRAPAK',price:135.14,unit:'1000ml'},
+  {code:'1000271',cat:'Dieta',desc:'PEPTAMEN JUNIOR PO',price:200.55,unit:'lata 400g'},
+  {code:'1000272',cat:'Dieta',desc:'PEPTAMEN PO',price:215.46,unit:'400g'},
+  {code:'1000274',cat:'Dieta',desc:'PERATIVE',price:19.17,unit:'lata 237ml'},
+  {code:'1000275',cat:'Dieta',desc:'PERATIVE RTH SF',price:98.39,unit:'1000ml'},
+  {code:'1000276',cat:'Dieta',desc:'PKU NUTRI 1 CONCENTRATED',price:668.55,unit:'lata 500g'},
+  {code:'1000277',cat:'Dieta',desc:'PKU NUTRI 2 CONCENTRATED',price:677.23,unit:'lata 500g'},
+  {code:'1000278',cat:'Dieta',desc:'PKU NUTRI 3 CONCENTRATED',price:677.23,unit:'lata 500g'},
+  {code:'1000279',cat:'Dieta',desc:'PREGOMIN PEPTI',price:155.55,unit:'lata 400g'},
+  {code:'1000280',cat:'Dieta',desc:'PREGOMIN PLUS',price:157.10,unit:'lata 400g'},
+  {code:'1000281',cat:'Dieta',desc:'PROBIATOP 1G LACTOPRO',price:3.00,unit:'1g'},
+  {code:'1000282',cat:'Dieta',desc:'PROTEIN PT',price:106.33,unit:'240g'},
+  {code:'1000283',cat:'Dieta',desc:'REPLENA LP',price:20.73,unit:'220ml'},
+  {code:'1000284',cat:'Dieta',desc:'RESOURCE FIBERMAIS',price:94.50,unit:'lata 260g'},
+  {code:'1000285',cat:'Dieta',desc:'RESOURCE FIBERMAIS',price:3.59,unit:'sache 5g'},
+  {code:'1000286',cat:'Dieta',desc:'RESOURCE FIBERMAIS FLORA',price:7.33,unit:'sache 5g'},
+  {code:'1000288',cat:'Dieta',desc:'RESOURCE PROTEIN',price:116.51,unit:'lata 240g'},
+  {code:'1000289',cat:'Dieta',desc:'RESOURCE THICKEN-UP CLEAR',price:118.08,unit:'lata 125g'},
+  {code:'1000290',cat:'Dieta',desc:'SIMBIOFLORA',price:2.87,unit:'sache 6g'},
+  {code:'1000291',cat:'Dieta',desc:'SIMFORT REG. INTESTINAL',price:4.66,unit:'sache 2g'},
+  {code:'1000292',cat:'Dieta',desc:'SOUVENAID CARTUCHO C/4 UNID.',price:62.50,unit:'frasco 125ml'},
+  {code:'1000293',cat:'Dieta',desc:'STIMULANCE',price:107.66,unit:'lata 225g'},
+  {code:'1000294',cat:'Dieta',desc:'SUPPORTAN EASY BAG',price:61.80,unit:'500ml'},
+  {code:'1000295',cat:'Dieta',desc:'SURVIMED OPD',price:111.30,unit:'bolsa 1000ml'},
+  {code:'1000296',cat:'Dieta',desc:'SURVIMED OPD',price:74.55,unit:'bolsa 500ml'},
+  {code:'1000297',cat:'Dieta',desc:'SURVIMED OPD DRINK BAUNILHA',price:31.54,unit:'200ml'},
+  {code:'1000298',cat:'Dieta',desc:'SURVIMED OPD HN 1.3KCAL',price:84.58,unit:'500ml'},
+  {code:'1000299',cat:'Dieta',desc:'TROPHIC 1.5',price:61.96,unit:'frasco 1000ml'},
+  {code:'1000300',cat:'Dieta',desc:'TROPHIC EP',price:55.56,unit:'tetra pak 1000ml'},
+  {code:'1000301',cat:'Dieta',desc:'TROPHIC FIBER',price:43.58,unit:'1000ml'},
+  {code:'1000302',cat:'Dieta',desc:'TROPHIC INFANT FORMULA INFANTIL',price:57.32,unit:'400g'},
+  {code:'1000304',cat:'Dieta',desc:'TROPHIC SOYA TETRAPACK',price:32.30,unit:'1000ml'},
+  {code:'1000305',cat:'Dieta',desc:'TYR ANAMIX INFANT (0 A 3 ANOS)',price:777.34,unit:'lata 400g'},
+  {code:'1000306',cat:'Dieta',desc:'TYR ANAMIX JUNIOR (ACIMA DE 3 ANOS)',price:1887.40,unit:'lata 400g'},
+  {code:'1000307',cat:'Dieta',desc:'URC MED B PLUS',price:1188.40,unit:'500g'},
+  {code:'1000308',cat:'Dieta',desc:'VEGGIE PROTEIN ESSENTIAL VANILLA',price:287.37,unit:'450g'},
+  {code:'1000309',cat:'Dieta',desc:'WHEY PROTEIN',price:262.87,unit:'lata 900g'},
+  {code:'1000310',cat:'Dieta',desc:'WHEY PROTEIN ISOLATE',price:7.95,unit:'sache 15g'},
+  {code:'1000311',cat:'Dieta',desc:'XMET MAXAMUM',price:1848.18,unit:'lata 500g'},
+  {code:'1000312',cat:'Dieta',desc:'XMTVI MAXAMAID',price:1574.53,unit:'lata 500g'},
+  {code:'1000313',cat:'Dieta',desc:'XPT MAXAMAID',price:2233.45,unit:'lata 500g'},
+]; // 397 itens no total (8 diarias + 24 servicos + 9 curativos + 15 pacotes + 25 equipamentos + 5 recargas O2 + 58 medicamentos + 251 dietas + 2 pacotes materiais)
+
+// ================================================================
+// MAPEAMENTOS DE CORREÇÃO 2026 (portados do servidor Python)
+// ================================================================
+const SERVICE_CODE_MAP = {
+  '87000350': {code:'81095821', desc:'VISITA DOMICILIAR DE TECNICO DE ENFERMAGEM', price:68.00},
+  '85000400': {code:'81095805', desc:'VISITA DE ENFERMEIRO DOMICILIAR', price:97.00},
+  '85000401': {code:'81095813', desc:'VISITA DE ENFERMEIRO DOMICILIAR ESPECIALISTA', price:115.09},
+  '85002518': {code:'81095066', desc:'REMOCAO SIMPLES - IDA', price:368.18},
+  '85002519': {code:'81095074', desc:'REMOCAO SIMPLES - IDA E VOLTA', price:631.86},
+  '87000431': {code:'81095716', desc:'FONOTERAPIA DOMICILIAR', price:132.27},
+  '87000466': {code:'81095694', desc:'FISIOTERAPIA DOMICILIAR', price:90.00},
+  '87000467': {code:'81095708', desc:'FISIOTERAPIA DOMICILIAR ESPECIALIZADA', price:160.79},
+  '87000468': {code:'81095716', desc:'FONOTERAPIA DOMICILIAR', price:132.27},
+  '87000469': {code:'81095732', desc:'NUTRICIONISTA DOMICILIAR', price:82.50},
+  '87000470': {code:'81095775', desc:'TERAPIA OCUPACIONAL DOMICILIAR', price:140.00},
+  '87000471': {code:'81095759', desc:'PSICOLOGIA DOMICILIAR', price:90.00},
+  '85000100': {code:'81095830', desc:'VISITA MEDICA DOMICILIAR', price:331.42},
+  '85000101': {code:'81095848', desc:'VISITA MEDICA DOMICILIAR ESPECIALISTA', price:400.00},
+  '87000300': {code:'81095236', desc:'ENFERMAGEM EXCLUSIVA 06HS', price:139.53},
+  '87000301': {code:'81095244', desc:'ENFERMAGEM EXCLUSIVA 12HS', price:216.47},
+  '87000302': {code:'81095252', desc:'ENFERMAGEM EXCLUSIVA 24HS', price:415.00},
+  '87000725': {code:'81095260', desc:'EQUIPO (BOMBA DE INFUSAO INCLUSO)', price:24.65},
+  '87000377': {code:'81095732', desc:'NUTRICIONISTA DOMICILIAR', price:82.50},
+  '87000253': {code:'81095830', desc:'VISITA MEDICA DOMICILIAR', price:331.42},
+  '00000018': {code:'81095058', desc:'MEDICACAO EV', price:90.00},
+  '00000021': {code:'81095058', desc:'MEDICACAO EV', price:90.00},
+  '87000687': {code:'81095643', desc:'PACOTE CURATIVO BAIXA COMPLEXIDADE 48H', price:94.13},
+  '85000191': {code:'81095201', desc:'CONCENTRADOR DE O2', price:15.00},
+  '85000192': {code:'81095210', desc:'CONCENTRADOR DE O2 PORTATIL', price:7.01},
+  '85000193': {code:'81095228', desc:'COUGH ASSIST', price:49.88},
+  '85001163': {code:'81095171', desc:'CAMA ELETRICA', price:12.89},
+  '85000183': {code:'81095198', desc:'COLCHAO PNEUMATICO', price:3.50},
+  '85000779': {code:'81095333', desc:'OXIMETRO', price:8.50},
+  '85000507': {code:'81095325', desc:'ASPIRADOR / NEBULIZADOR', price:1.60},
+  '87000334': {code:'81095252', desc:'ENFERMAGEM EXCLUSIVA 24HS', price:415.00},
+  '00001370': {code:'81095457', desc:'PACOTE SUPORTE VENTILATORIO BIPAP', price:71.54},
+};
+
+const SERVICE_PRICES_SP = {
+  '81095058':90.00,'81095066':368.18,'81095074':631.86,'81095082':769.07,'81095090':1430.89,
+  '81095104':1.85,'81095112':1.06,'81095120':3.50,'81095139':3.15,'81095147':4.77,
+  '81095155':2.13,'81095163':3.65,'81095171':12.89,'81095180':4.50,'81095198':3.50,
+  '81095201':15.00,'81095210':7.01,'81095228':49.88,'81095236':139.53,'81095244':216.47,
+  '81095252':415.00,'81095260':24.65,'81095279':1.08,'81095287':19.74,'81095295':1.80,
+  '81095309':15.00,'81095317':2.01,'81095325':1.60,'81095333':8.50,'81095341':8.50,
+  '81095520':134.58,'81095538':47.00,'81095546':66.43,'81095554':90.01,
+  '81095562':106.70,'81095570':24.40,'81095589':172.02,'81095597':12.00,
+  '81095694':90.00,'81095708':160.79,
+  '81095716':132.27,'81095724':180.00,'81095732':82.50,'81095740':111.93,'81095759':90.00,
+  '81095767':115.52,'81095775':140.00,'81095783':145.00,'81095791':89.25,'81095805':97.00,
+  '81095813':115.09,'81095821':68.00,'81095830':331.42,'81095848':400.00,
+  '81095350':154.48,'81095368':126.00,'81095376':2500.00,'81095384':175.83,'81095392':61.00,'81095406':264.32,
+  '81095414':177.38,'81095422':122.21,'81095430':148.63,'81095449':39.00,
+  '81095457':71.54,'81095465':155.10,'81095473':351.17,'81095481':2080.00,
+  '81095490':55.00,'81095503':8.20,'81095511':99.80,
+  '81095600':112.88,'81095619':140.24,'81095627':170.30,'81095635':77.42,
+  '81095643':94.13,'81095651':115.43,'81095660':87.03,'81095678':112.89,
+  '81095686':134.93,
+  '80031528':700.00,'80031544':1040.00,'80031552':1292.00,'80031560':1340.00,
+  '80031536':750.00,'80031579':1092.00,'80031587':377.18,'80031595':374.23,
+};
+
+const SERVICE_PRICES_DN = {
+  ...SERVICE_PRICES_SP,
+  '81095236':132.89,'81095694':85.00,'81095708':153.13,'81095716':120.00,'81095724':138.92,
+  '81095732':80.00,'81095759':84.74,'81095767':115.52,'81095775':110.00,
+  '81095791':85.00,'81095805':92.83,'81095813':109.61,'81095821':63.05,
+  '81095830':331.42,'81095848':392.83,
+  '81095368':129.78,'81095457':69.15,
+  '80031528':664.50,'80031544':1008.80,'80031552':1280.40,'80031560':1340.00,
+  '80031536':698.00,'80031579':1059.24,'80031587':337.34,'80031595':339.34,
+};
+
+function getServicePrices(entity) {
+  return (entity === 'ba' || entity === 'BA') ? SERVICE_PRICES_DN : SERVICE_PRICES_SP;
+}
+
+const DIARIA_GLOBAL_CODES = new Set([
+  '80031528','80031536','80031544','80031552','80031560','80031579','80031587','80031595',
+]);
+
+const MEDICATION_PRICES_SP = {
+  '1000010':6.68,'1000011':9.80,'1000012':21.00,'1000014':1890.00,'1000015':442.65,
+  '1000016':24.70,'1000017':56.26,'1000018':1400.00,'1000019':1618.44,'1000021':35.12,
+  '1000022':29.00,'1000023':1044.98,'1000024':342.25,'1000025':25.12,'1000026':11.19,
+  '1000027':18.33,'1000028':45.71,'1000029':39.89,'1000030':7.10,'1000031':143.00,
+  '1000032':304.90,'1000033':330.07,'1000034':39.40,'1000035':77.10,'1000036':2.25,
+  '1000037':60.41,'1000038':19.50,'1000039':51.80,'1000040':72.00,'1000042':35.10,
+  '1000043':19.00,'1000044':8.22,'1000045':418.23,'1000046':285.60,'1000048':46.00,
+  '1000049':45.00,'1000050':519.58,'1000051':87.57,'1000052':91.95,'1000053':182.15,
+  '1000054':12.45,'1000055':1806.32,
+  '1000314':47.54,'1000316':669.50,'1000317':1576.72,'1000318':3144.12,
+  '1000320':240.00,'1000321':108.00,'1000322':1089.91,'1000324':368.13,'1000325':359.62,
+  '1000326':16.70,'1000327':303.45,'1000332':543.00,'1000333':106.77,'1000334':214.20,
+  '1000335':364.00,'1000336':652.17,
+};
+
+const MED_DESC_MAP = {
+  'ertapenem':{code:'1000033',price:330.07},
+  'invanz':{code:'1000325',price:359.62},
+  'meropenem 1g':{code:'1000042',price:35.10},
+  'meropenem 500':{code:'1000043',price:19.00},
+  'cefepima 1g':{code:'1000021',price:35.12},
+  'cefepima 2g':{code:'1000022',price:29.00},
+  'vancomicina':{code:'1000054',price:12.45},
+  'piperacilina':{code:'1000048',price:46.00},
+  'linezolida':{code:'1000040',price:72.00},
+  'daptomicina':{code:'1000032',price:304.90},
+  'anfotericina':{code:'1000014',price:1890.00},
+  'anidulafungina':{code:'1000015',price:442.65},
+  'caspofungina 50':{code:'1000018',price:1400.00},
+  'caspofungina 70':{code:'1000019',price:1618.44},
+  'micafungina 100':{code:'1000045',price:418.23},
+  'micafungina 50':{code:'1000046',price:285.60},
+  'levofloxacino':{code:'1000039',price:51.80},
+  'ciprofloxacino':{code:'1000028',price:45.71},
+  'metronidazol':{code:'1000044',price:8.22},
+  'fluconazol':{code:'1000034',price:39.40},
+  'azitromicina':{code:'1000016',price:24.70},
+  'ceftriaxona':{code:'1000025',price:25.12},
+  'clindamicina':{code:'1000030',price:7.10},
+  'imipenem':{code:'1000037',price:60.41},
+  'gentamicina':{code:'1000036',price:2.25},
+  'voriconazol':{code:'1000055',price:1806.32},
+  'tigeciclina':{code:'1000335',price:364.00},
+  'polimixina':{code:'1000049',price:45.00},
+  'teicoplanina 200':{code:'1000051',price:87.57},
+  'teicoplanina 400':{code:'1000052',price:91.95},
+  'teiplan 200':{code:'1000333',price:106.77},
+  'teiplan 400':{code:'1000334',price:214.20},
+  'cubicin':{code:'1000324',price:368.13},
+  'zyvox':{code:'1000327',price:303.45},
+  'clavulin':{code:'1000314',price:47.54},
+  'torgena':{code:'1000322',price:1089.91},
+  'cefoxitina':{code:'1000326',price:16.70},
+};
+
+const SERVICE_DESC_MAP = {
+  'visita tec enfermagem':'81095821',
+  'visita tecnico enfermagem':'81095821',
+  'visita de tecnico':'81095821',
+  'visita enfermeiro':'81095805',
+  'visita de enfermeiro':'81095805',
+  'visita de implantação':'81095805',
+  'visita implantação':'81095805',
+  'implantação de enfermagem':'81095805',
+  'avaliação de enfermeiro':'81095805',
+  'visita avaliação de enfermeiro':'81095805',
+  'avaliação inicial enfermagem':'81095805',
+  'avaliação enfermagem':'81095805',
+  'remocao simples':'81095066',
+  'remoção simples':'81095066',
+  'fisioterapia':'81095694',
+  'fonoterapia':'81095716',
+  'fonoaudiologia':'81095716',
+  'nutricionista':'81095732',
+  'terapia ocupacional':'81095775',
+  'psicologia':'81095759',
+  'visita medica':'81095830',
+  'visita médica':'81095830',
+  'enfermagem exclusiva 06':'81095236',
+  'enfermagem exclusiva 6h':'81095236',
+  'enfermagem exclusiva 12':'81095244',
+  'enfermagem exclusiva 24':'81095252',
+  'medicacao ev':'81095058',
+  'medicação ev':'81095058',
+  'curativo baixa compl 24':'81095635',
+  'curativo baixa complexidade 24':'81095635',
+  'curativo baixa compl 48':'81095643',
+  'curativo baixa complexidade 48':'81095643',
+  'curativo baixa compl 72':'81095651',
+  'curativo baixa complexidade 72':'81095651',
+  'curativo media compl 24':'81095660',
+  'curativo média complexidade 24':'81095660',
+  'curativo media compl 48':'81095678',
+  'curativo média complexidade 48':'81095678',
+  'curativo media compl 72':'81095686',
+  'curativo média complexidade 72':'81095686',
+  'curativo alta compl 24':'81095600',
+  'curativo alta complexidade 24':'81095600',
+  'curativo alta compl 48':'81095619',
+  'curativo alta complexidade 48':'81095619',
+  'curativo alta compl 72':'81095627',
+  'curativo alta complexidade 72':'81095627',
+  'medicacao endovenosa':'81095058',
+  'medicação endovenosa':'81095058',
+  'assistente social':'81095791',
+  'pacote administração de dieta':'81095490',
+  'pacote administracao de dieta':'81095490',
+  'pacote adm dieta':'81095490',
+  'adm dieta':'81095490',
+};
+
+// ================================================================
+// UTILIDADES
+// ================================================================
+function fmt(v) {
+  if(v == null || isNaN(v)) return '0,00';
+  if(v===0) return '0,00';
+  return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ================================================================
+// SUPABASE (base compartilhada + fallback localStorage)
+// ================================================================
+const SB_URL = 'https://qlvljigfxirdzjzlrveu.supabase.co';
+const SB_KEY = 'sb_publishable_ygkWzzgBYWmHdcAFggXB0w_oWqFyEwh';
+let sbClient = null;
+let sbOnline = false;
+
+function initSupabase() {
+  try {
+    if (window.supabase && window.supabase.createClient) {
+      sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+      return true;
+    }
+  } catch(e) { /* ignore */ }
+  return false;
+}
+
+function setConnStatus(online) {
+  sbOnline = online;
+  const el = document.getElementById('conn-status');
+  if(!el) return;
+  el.textContent = online ? '● Base compartilhada' : '● Offline (local)';
+}
+
+async function testSupabaseConnection() {
+  if(!sbClient) { setConnStatus(false); return; }
+  try {
+    const { error } = await sbClient.from('bradesco_base_oficial').select('id', {count:'exact', head:true});
+    setConnStatus(!error);
+  } catch(e) { setConnStatus(false); }
+}
+
+// ---- localStorage fallback: base oficial ----
+const LS_KEY_SP = 'bradesco2026_base_sp';
+const LS_KEY_BA = 'bradesco2026_base_ba';
+function localKey(entity) { return entity==='BA' ? LS_KEY_BA : LS_KEY_SP; }
+
+function getLocalBase(entity) {
+  try {
+    const stored = localStorage.getItem(localKey(entity));
+    if(stored) return JSON.parse(stored);
+  } catch(e) {}
+  return [...DEFAULT_BASE_SP];
+}
+function saveLocalBase(entity, items) {
+  try { localStorage.setItem(localKey(entity), JSON.stringify(items)); } catch(e) {}
+}
+
+// cache em memória por entidade, para não refazer a busca a cada render
+const baseCache = { SP: null, BA: null };
+
+async function loadBase(entity) {
+  if(baseCache[entity]) return baseCache[entity];
+
+  if(sbClient) {
+    try {
+      const { data, error } = await sbClient.from('bradesco_base_oficial').select('*').eq('entity', entity);
+      if(!error) {
+        setConnStatus(true);
+        if(data && data.length) {
+          const items = data.map(r => ({code:r.code, cat:r.cat, desc:r.descricao, price:Number(r.preco), unit:r.unidade}));
+          baseCache[entity] = items;
+          saveLocalBase(entity, items);
+          return items;
+        }
+        // Tabela vazia para esta entidade: semear com a base padrão 2026
+        await persistReplaceAll(entity, [...DEFAULT_BASE_SP], true);
+        return baseCache[entity];
+      }
+    } catch(e) { /* cai para o fallback local */ }
+  }
+
+  setConnStatus(false);
+  const local = getLocalBase(entity);
+  baseCache[entity] = local;
+  return local;
+}
+
+async function persistAdd(entity, item) {
+  baseCache[entity] = baseCache[entity] || [];
+  baseCache[entity].push(item);
+  saveLocalBase(entity, baseCache[entity]);
+  if(sbClient) {
+    try {
+      const { error } = await sbClient.from('bradesco_base_oficial').insert([{
+        entity, code:item.code, cat:item.cat, descricao:item.desc, preco:item.price, unidade:item.unit,
+        updated_at: new Date().toISOString(),
+      }]);
+      setConnStatus(!error);
+    } catch(e) { setConnStatus(false); }
+  }
+}
+
+async function persistDelete(entity, code) {
+  baseCache[entity] = (baseCache[entity] || []).filter(i => i.code !== code);
+  saveLocalBase(entity, baseCache[entity]);
+  if(sbClient) {
+    try {
+      const { error } = await sbClient.from('bradesco_base_oficial').delete().eq('entity', entity).eq('code', code);
+      setConnStatus(!error);
+    } catch(e) { setConnStatus(false); }
+  }
+}
+
+async function persistReplaceAll(entity, items, isSeed) {
+  baseCache[entity] = items;
+  saveLocalBase(entity, items);
+  if(sbClient) {
+    try {
+      await sbClient.from('bradesco_base_oficial').delete().eq('entity', entity);
+      const rows = items.map(i => ({
+        entity, code:i.code, cat:i.cat, descricao:i.desc, preco:i.price, unidade:i.unit,
+        updated_at: new Date().toISOString(),
+      }));
+      const chunkSize = 200;
+      for(let idx=0; idx<rows.length; idx+=chunkSize) {
+        const { error } = await sbClient.from('bradesco_base_oficial')
+          .upsert(rows.slice(idx, idx+chunkSize), { onConflict: 'entity,code' });
+        if(error) console.warn('upsert chunk error:', error.message);
+      }
+      setConnStatus(true);
+    } catch(e) { setConnStatus(false); }
+  }
+}
+
+// ---- localStorage fallback: histórico ----
+const LS_HISTORY_KEY = 'bradesco2026_history';
+function getLocalHistory() {
+  try { return JSON.parse(localStorage.getItem(LS_HISTORY_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveLocalHistoryEntry(entry) {
+  const hist = getLocalHistory();
+  hist.unshift(entry);
+  if(hist.length > 50) hist.length = 50;
+  localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(hist));
+}
+
+async function loadHistory() {
+  if(sbClient) {
+    try {
+      const { data, error } = await sbClient.from('bradesco_historico')
+        .select('*').order('created_at', {ascending:false}).limit(50);
+      if(!error) {
+        setConnStatus(true);
+        return (data || []).map(r => ({
+          timestamp: r.created_at, filename: r.filename, status: r.status,
+          changes: r.changes_count, total_old: r.total_old, total_new: r.total_new,
+          patient: r.patient_name, details: r.details || [],
+        }));
+      }
+    } catch(e) { /* cai para local */ }
+  }
+  setConnStatus(false);
+  return getLocalHistory();
+}
+
+async function saveHistoryEntry(entry) {
+  saveLocalHistoryEntry({
+    timestamp: new Date().toISOString(),
+    filename: entry.filename, status: entry.status, changes: entry.changes_count,
+    total_old: entry.total_old, total_new: entry.total_new,
+    patient: entry.patient_name, details: entry.details || [],
+  });
+
+  if(sbClient) {
+    try {
+      const { error } = await sbClient.from('bradesco_historico').insert([{
+        usuario: entry.usuario, filename: entry.filename, status: entry.status,
+        changes_count: entry.changes_count, total_old: entry.total_old, total_new: entry.total_new,
+        patient_name: entry.patient_name, details: entry.details || [], entity: entry.entity,
+      }]);
+      setConnStatus(!error);
+    } catch(e) { setConnStatus(false); }
+  }
+  await renderHistory();
+}
+
+// ================================================================
+// COLABORADOR (nome salvo localmente)
+// ================================================================
+const LS_USER_KEY = 'bradesco2026_user_name';
+function getUserName() {
+  return localStorage.getItem(LS_USER_KEY) || 'Não identificado';
+}
+function ensureUserName() {
+  const name = localStorage.getItem(LS_USER_KEY);
+  if(!name) {
+    const overlay = document.getElementById('name-overlay');
+    if(overlay) {
+      overlay.classList.add('open');
+      const inp = document.getElementById('name-input');
+      if(inp) setTimeout(() => inp.focus(), 100);
+    }
+  }
+  updateUserNameDisplay();
+}
+function saveName() {
+  const inp = document.getElementById('name-input');
+  const name = (inp?.value || '').trim();
+  if(name) localStorage.setItem(LS_USER_KEY, name);
+  else localStorage.setItem(LS_USER_KEY, 'Colaborador');
+  document.getElementById('name-overlay')?.classList.remove('open');
+  updateUserNameDisplay();
+}
+function skipName() {
+  localStorage.setItem(LS_USER_KEY, 'Colaborador');
+  document.getElementById('name-overlay')?.classList.remove('open');
+  updateUserNameDisplay();
+}
+function changeUserName() {
+  const overlay = document.getElementById('name-overlay');
+  if(overlay) {
+    const inp = document.getElementById('name-input');
+    const current = getUserName();
+    if(inp) inp.value = current === 'Colaborador' ? '' : current;
+    overlay.classList.add('open');
+    setTimeout(() => inp?.focus(), 100);
+  }
+}
+function updateUserNameDisplay() {
+  const el = document.getElementById('user-name-display');
+  if(el) el.textContent = '👤 ' + getUserName();
+}
+
+// ================================================================
+// TABS
+// ================================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='tab-'+tab));
+  if(tab==='base') renderBase();
+  if(tab==='historico') renderHistory();
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+// ================================================================
+// PDF.JS — EXTRAÇÃO DE TEXTO
+// ================================================================
+let pdfjsLibPromise = null;
+async function initPdfJs() {
+  if(!pdfjsLibPromise) {
+    pdfjsLibPromise = import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs').then(lib => {
+      lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+      return lib;
+    });
+  }
+  return pdfjsLibPromise;
+}
+
+async function extractPdfText(arrayBuffer) {
+  const pdfjsLib = await initPdfJs();
+  const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+  const pageTexts = [];
+  let fullText = '';
+  for(let i=1; i<=pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    let pageText = '';
+    let lastY = null;
+    for(const item of content.items) {
+      const y = item.transform ? item.transform[5] : null;
+      if(lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
+        pageText += '\n';
+      }
+      pageText += item.str + ' ';
+      if(y !== null) lastY = y;
+    }
+    pageText += '\n';
+    // pdf.js emite fragmentos de texto que, ao serem concatenados, geram
+    // múltiplos espaços entre palavras (ex.: "ATENDIMENTO   PROFISSIONAL").
+    // Isso quebra a busca por palavras-chave com espaço simples — normaliza aqui.
+    pageText = pageText.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n');
+    pageTexts.push(pageText);
+    fullText += pageText + '\n';
+  }
+  return { fullText, pageTexts, totalPages: pdf.numPages };
+}
+
+// ================================================================
+// PARSER DE ORÇAMENTO (porte do parse_budget_pdf em Python)
+// ================================================================
+function parsePriceBR(s) {
+  if(!s) return 0.0;
+  s = String(s).trim().replace(/\./g,'').replace(',', '.');
+  const v = parseFloat(s);
+  return isNaN(v) ? 0.0 : v;
+}
+
+function extractCode(text) {
+  const m = text.match(/\[(\d+)\]/);
+  return m ? m[1] : null;
+}
+
+function parseBudgetPdf(fullText, pageTexts, entity) {
+  const result = {
+    patient_name:'', matricula:'', period:'', orcamento_num:'',
+    assessment_pages:0, total_pages: pageTexts.length,
+    pacote:[], atendimento:[], equipamento:[], medicamentos:[], materiais:[], dietas:[],
+    total_old:0, total_new:0, changes_count:0, change_details:[],
+    assessment_pages: -1,
+  };
+
+  let m;
+  m = fullText.match(/Paciente:\s*(.+?)(?:\n|$)/);
+  if(m) result.patient_name = m[1].trim();
+
+  m = fullText.match(/Matr[ií]cula:\s*(\d+)/);
+  if(m) result.matricula = m[1];
+
+  m = fullText.match(/Per[ií]odo:\s*(.+?\d+\s*dia\(?s?\)?)/i);
+  if(m) result.period = m[1].trim();
+  else { m = fullText.match(/Per[ií]odo:\s*(.+?)(?:\n|$)/); if(m) result.period = m[1].trim(); }
+
+  m = fullText.match(/OR[ÇC]AMENTO\s*N[ºo°]\s*(\d+)/i);
+  if(m) result.orcamento_num = m[1];
+
+  m = fullText.match(/CAPTA[ÇC][ÃA]O\s+NOVO\s+PACIENTE\s+N[ºo°]?\s*(\d+)/i);
+  if(!result.orcamento_num && m) result.orcamento_num = m[1];
+
+  for(let i=0; i<pageTexts.length; i++) {
+    const t = pageTexts[i] || '';
+    if(t.includes('RESUMO') && (t.includes('Atendimento') || t.includes('Profissional'))) {
+      result.assessment_pages = i;
+      break;
+    }
+  }
+
+  // Usar apenas texto das páginas do orçamento (pular avaliação)
+  const budgetStartPage = result.assessment_pages >= 0 ? result.assessment_pages : 0;
+  const budgetText = pageTexts.slice(budgetStartPage).join('\n');
+  const lines = budgetText.split('\n');
+  let currentSection = null;
+  const itemsRaw = [];
+  let pendingDesc = null;
+
+  const SKIP_WORDS = ['PREÇO','PRECO','DESCONTO','QUANTIDADE','APLICAÇÃO','APLICACAO','DESCRIÇÃO','DESCRICAO','CODIGO','CÓDIGO','STATUS','TABELA','UNITÁRIO','UNITARIO'];
+
+  for(const line of lines) {
+    const lineStripped = line.trim();
+    if(!lineStripped) { pendingDesc = null; continue; }
+    const upper = lineStripped.toUpperCase();
+    const lineHasPrice = /\d{1,3}(?:\.\d{3})*,\d{2}/.test(lineStripped);
+
+    const isItem = lineStripped.startsWith('[');
+    if(upper.includes('SUBTOTAL') || (/^(ORCAMENTO\s+)?TOTAL\b/i.test(lineStripped) && !/\(R\s*\$\)/.test(lineStripped)) || upper.includes('ORÇAMENTO TOTAL')) {
+      currentSection = null;
+      pendingDesc = null;
+      continue;
+    } else if(upper === 'RESUMO' || (upper.includes('RESUMO') && !upper.includes('['))) {
+      currentSection = null; pendingDesc = null;
+      continue;
+    } else if(upper.startsWith('PRESCRI') || upper.startsWith('PRESCRIÇÃO')) {
+      currentSection = null; pendingDesc = null;
+      continue;
+    } else if(!isItem && !lineHasPrice && upper.includes('ATENDIMENTO PROFISSIONAL')) {
+      currentSection = 'atendimento'; pendingDesc = null;
+      continue;
+    } else if(!isItem && !lineHasPrice && /\bPACOTE\b/.test(upper) && !upper.includes('ATENDIMENTO') && !upper.includes('CURATIVO') && lineStripped.length < 40) {
+      currentSection = 'pacote'; pendingDesc = null;
+      continue;
+    } else if(!isItem && !lineHasPrice && (upper.includes('EQUIPAMENTO') || upper.includes('MOBILI'))) {
+      currentSection = 'equipamento'; pendingDesc = null;
+      continue;
+    } else if(!isItem && !lineHasPrice && (upper.startsWith('MATERIAL') || upper.startsWith('MATERIAIS')) && !upper.includes('MEDICAMENTO') && !upper.includes('DIETA')) {
+      if(currentSection !== 'materiais') { currentSection = 'materiais'; pendingDesc = null; continue; }
+    } else if(!isItem && !lineHasPrice && upper.startsWith('MEDICAMENTO') && !upper.includes('MATERIA') && !upper.includes('DIETA')) {
+      if(currentSection !== 'medicamentos') { currentSection = 'medicamentos'; pendingDesc = null; continue; }
+    } else if(!isItem && !lineHasPrice && upper.startsWith('DIETA') && !upper.includes('MATERIAL') && !upper.includes('MEDICAMENTO')) {
+      if(currentSection !== 'dietas') { currentSection = 'dietas'; pendingDesc = null; continue; }
+    }
+
+    if(!currentSection) continue;
+    if(SKIP_WORDS.some(w => upper.includes(w))) { pendingDesc = null; continue; }
+
+    const code = extractCode(lineStripped);
+    if(code || (lineStripped.includes('[') && lineStripped.includes(']'))) {
+      itemsRaw.push([currentSection, lineStripped, code]);
+      pendingDesc = null;
+    } else {
+      const hasPrice = /\d{1,3}(?:\.\d{3})*,\d{2}/.test(lineStripped);
+      if(hasPrice) {
+        const firstPriceM = lineStripped.match(/\d{1,3}(?:\.\d{3})*,\d{2}/);
+        const textBefore = firstPriceM ? lineStripped.substring(0, lineStripped.indexOf(firstPriceM[0])).trim() : '';
+        if(textBefore && /[a-zA-ZÀ-ú]{2,}/.test(textBefore)) {
+          itemsRaw.push([currentSection, lineStripped, null]);
+          pendingDesc = null;
+        } else if(pendingDesc) {
+          itemsRaw.push([currentSection, pendingDesc + ' ' + lineStripped, null]);
+          pendingDesc = null;
+        } else if(itemsRaw.length > 0 && itemsRaw[itemsRaw.length-1][0] === currentSection) {
+          const last = itemsRaw[itemsRaw.length-1];
+          if(!/\d{1,3}(?:\.\d{3})*,\d{2}/.test(last[1])) {
+            last[1] = last[1] + ' ' + lineStripped;
+          }
+        }
+      } else if(/[a-zA-ZÀ-ú]{2,}/.test(lineStripped)) {
+        if(itemsRaw.length > 0 && itemsRaw[itemsRaw.length-1][0] === currentSection) {
+          const last = itemsRaw[itemsRaw.length-1];
+          const lastLine = last[1];
+          const fp = lastLine.match(/\d{1,3}(?:\.\d{3})*,\d{2}/);
+          if(fp) {
+            const pos = lastLine.indexOf(fp[0]);
+            last[1] = lastLine.substring(0, pos) + lineStripped + ' ' + lastLine.substring(pos);
+          } else {
+            last[1] = lastLine + ' ' + lineStripped;
+          }
+        } else {
+          pendingDesc = lineStripped;
+        }
+      }
+    }
+  }
+
+  const pricePattern = /\d{1,3}(?:\.\d{3})*,\d{2}/g;
+
+  function extractDataNumbers(line) {
+    const firstPrice = line.match(/\d{1,3}(?:\.\d{3})*,\d{2}/);
+    if(!firstPrice) return [];
+    const dataStart = line.indexOf(firstPrice[0]);
+    const dataPart = line.substring(dataStart);
+    const nums = [];
+    const re = /(\d{1,3}(?:\.\d{3})*,\d{2}|\b\d+\b)/g;
+    let m;
+    while((m = re.exec(dataPart)) !== null) {
+      nums.push(parsePriceBR(m[1]));
+    }
+    return nums;
+  }
+
+  const svcPrices = getServicePrices(entity);
+
+  for(const [section, line, code] of itemsRaw) {
+    const prices = line.match(pricePattern) || [];
+    if(!prices.length) continue;
+
+    const firstPriceIdx = line.indexOf(prices[0]);
+    let descRaw = line.substring(0, firstPriceIdx).replace(/^\[\d+\]\s*-?\s*/, '').replace(/\s*R\$\s*$/,'').trim();
+    if(!descRaw) { const dm = line.match(/^(?:\[\d+\]\s*-?\s*)?(.+?)(?:\s+\d)/); descRaw = dm ? dm[1].replace(/\s*R\$\s*$/,'').trim() : line.slice(0,60); }
+    const desc = descRaw;
+
+    let nums = extractDataNumbers(line);
+    let oldPrice = 0, discount = 0, qty = 1, oldTotal = 0;
+
+    // Se os dois primeiros números são iguais (preço duplicado no PDF), remover o duplicado
+    if(nums.length >= 6 && Math.abs(nums[0] - nums[1]) < 0.01) {
+      nums = [nums[0], ...nums.slice(2)];
+    }
+
+    if(nums.length >= 5) {
+      oldPrice = nums[0];
+      discount = nums[1];
+      qty = Math.max(1, Math.round(nums[nums.length - 2]));
+      oldTotal = nums[nums.length - 1];
+    } else if(nums.length >= 4) {
+      oldPrice = nums[0];
+      discount = nums[1];
+      qty = Math.max(1, Math.round(nums[2]));
+      oldTotal = nums[3];
+    } else if(nums.length >= 2) {
+      oldPrice = nums[0];
+      oldTotal = nums[nums.length - 1];
+      if(oldPrice > 0) qty = Math.max(1, Math.round(oldTotal / oldPrice));
+    } else if(nums.length === 1) {
+      oldPrice = nums[0];
+      oldTotal = nums[0];
+    }
+
+    let newCode = code;
+    let newPrice = oldPrice;
+    let changed = false;
+
+    if(section === 'atendimento' || section === 'pacote') {
+      if(code && SERVICE_CODE_MAP[code]) {
+        const mapped = SERVICE_CODE_MAP[code];
+        newCode = mapped.code;
+        newPrice = svcPrices[newCode] !== undefined ? svcPrices[newCode] : mapped.price;
+        changed = (newCode !== code) || (Math.abs(newPrice - oldPrice) > 0.01);
+      } else if(code && svcPrices[code] !== undefined) {
+        newPrice = svcPrices[code];
+        changed = Math.abs(newPrice - oldPrice) > 0.01;
+      } else {
+        const _stop = new Set(['de','do','da','dos','das','em','com','para','por','a','o','e','à','ao','na','no']);
+        const descNorm = desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const descTokens = descNorm.split(/\s+/).filter(w => w.length >= 2 && !_stop.has(w));
+        let bestMatch = null, bestLen = 0;
+        for(const kw of Object.keys(SERVICE_DESC_MAP)) {
+          const kwNorm = kw.normalize('NFD').replace(/[̀-ͯ]/g, '');
+          const kwTokens = kwNorm.split(/\s+/).filter(w => w.length >= 2 && !_stop.has(w));
+          const allMatch = kwTokens.every(kt => descTokens.some(dt => dt === kt || (dt.length >= 3 && kt.length >= 3 && (dt.startsWith(kt) || kt.startsWith(dt)))));
+          if(allMatch && kwTokens.length > bestLen) { bestMatch = kw; bestLen = kwTokens.length; }
+        }
+        if(bestMatch) {
+          const sc = SERVICE_DESC_MAP[bestMatch];
+          newCode = sc;
+          newPrice = svcPrices[sc] !== undefined ? svcPrices[sc] : oldPrice;
+          changed = true;
+        }
+      }
+      // Multiplicador de frequência: "4X DIA" → preço base × 4
+      const freqMatch = desc.match(/(\d+)\s*[Xx]\s*DIA/i);
+      if(freqMatch) {
+        const freq = parseInt(freqMatch[1]);
+        if(freq > 1) { newPrice = newPrice * freq; changed = true; }
+      }
+      // Desconto: cortesia (sempre 0), incluído em pacote (original 100% ou total=0), ou cobrar
+      const descLowerAt = desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const isCortesia = descLowerAt.includes('implantacao de enfermagem') || descLowerAt.includes('implantacao enfermagem')
+        || descLowerAt.includes('avaliacao de enfermeiro') || descLowerAt.includes('avaliacao enfermeiro')
+        || descLowerAt.includes('avaliacao de enfermagem') || descLowerAt.includes('avaliacao enfermagem');
+      const originalFree = (oldTotal < 0.01 && oldPrice > 0);
+      const pacoteSectionZero = (section === 'pacote' && oldPrice < 0.01 && oldTotal < 0.01);
+      if(isCortesia || discount >= 100 || originalFree || pacoteSectionZero) {
+        discount = 100;
+      } else {
+        discount = 0;
+      }
+    } else if(section === 'medicamentos') {
+      const descLower = desc.toLowerCase();
+      for(const kw of Object.keys(MED_DESC_MAP)) {
+        if(descLower.includes(kw)) {
+          const medInfo = MED_DESC_MAP[kw];
+          newPrice = medInfo.price;
+          changed = Math.abs(newPrice - oldPrice) > 0.01;
+          break;
+        }
+      }
+    } else if(section === 'equipamento') {
+      if(code && SERVICE_CODE_MAP[code]) {
+        const mapped = SERVICE_CODE_MAP[code];
+        newCode = mapped.code;
+        newPrice = svcPrices[newCode] !== undefined ? svcPrices[newCode] : mapped.price;
+        changed = (newCode !== code) || (Math.abs(newPrice - oldPrice) > 0.01);
+      } else if(code && svcPrices[code] !== undefined) {
+        newPrice = svcPrices[code];
+        changed = Math.abs(newPrice - oldPrice) > 0.01;
+      } else {
+        const descLower = desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        let bestEquip = null, bestScore = 0;
+        for(const b of DEFAULT_BASE_SP) {
+          if(b.cat !== 'Equipamento') continue;
+          const bNorm = b.desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          const bWords = bNorm.split(/\s+/).filter(w => w.length >= 2);
+          const dWords = descLower.split(/\s+/).filter(w => w.length >= 2);
+          let score = 0;
+          for(const w of bWords) { if(dWords.some(d => d === w || (d.length >= 3 && w.length >= 3 && (d.startsWith(w) || w.startsWith(d))))) score++; }
+          const minScore = bWords.length <= 1 ? 1 : 2;
+          if(score > bestScore && score >= minScore) { bestScore = score; bestEquip = b; }
+        }
+        if(bestEquip) {
+          newCode = bestEquip.code;
+          newPrice = svcPrices[newCode] !== undefined ? svcPrices[newCode] : bestEquip.price;
+          changed = true;
+        }
+      }
+    } else if(section === 'dietas') {
+      const descLower = desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      let bestDiet = null, bestScore = 0;
+      for(const b of DEFAULT_BASE_SP) {
+        if(b.cat !== 'Dieta') continue;
+        const bWords = b.desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(/\s+/);
+        let score = 0;
+        for(const w of bWords) { if(w.length >= 2 && descLower.includes(w)) score++; }
+        if(bWords[0] && descLower.includes(bWords[0])) score += 2;
+        if(score > bestScore && score >= 3) { bestScore = score; bestDiet = b; }
+      }
+      if(bestDiet) {
+        newPrice = bestDiet.price;
+        changed = Math.abs(newPrice - oldPrice) > 0.01;
+      }
+    }
+
+    const REMOCAO_CODES = new Set(['81095066','81095074','81095082','81095090']);
+    const resolvedCode = newCode || code || '';
+    if(REMOCAO_CODES.has(resolvedCode) || desc.toLowerCase().replace(/[çã]/g, c => c==='ç'?'c':'a').includes('remocao') || desc.toLowerCase().includes('remoção')) {
+      discount = 100;
+    }
+
+    const newUnitPrice = newPrice * (1 - discount / 100);
+    const newTotal = newUnitPrice * qty;
+
+    const item = {
+      desc, old_code: code || '', new_code: newCode || code || '',
+      old_price: oldPrice, new_price: newPrice, discount, qty,
+      old_total: oldTotal, new_total: newTotal, changed,
+    };
+
+    if(section === 'materiais') {
+      item.price = oldPrice;
+      item.total = oldTotal;
+      item.code = code || '';
+    }
+    if(section === 'equipamento') {
+      item.price = newPrice;
+      item.total = newTotal;
+      item.code = newCode || code || '';
+    }
+    if(section === 'medicamentos') {
+      item.code = code || '';
+      item.anexo_v = changed;
+    }
+    if(section === 'pacote') {
+      item.code = code || '';
+    }
+
+    result[section].push(item);
+
+    if(changed) {
+      result.changes_count++;
+      const detail = {desc};
+      if(section === 'atendimento' && newCode !== code) {
+        detail.old_val = `Cód ${code}`;
+        detail.new_val = `Cód ${newCode} (R$ ${newPrice.toFixed(2)})`;
+      } else {
+        detail.old_val = `R$ ${oldPrice.toFixed(2)}`;
+        detail.new_val = `R$ ${newPrice.toFixed(2)}`;
+      }
+      result.change_details.push(detail);
+    }
+  }
+
+  // Pacote de dieta: 1) auto-incluir se tem dieta, 2) zerar itens avulsos (equipo/frasco/seringa)
+  const pacoteDietaCode = '81095490';
+  const hasDieta = result.dietas.length > 0;
+  const allSections = [...result.materiais, ...result.equipamento, ...result.atendimento, ...result.pacote, ...result.dietas];
+  let hasPacoteDieta = allSections.some(it => {
+    const c = it.code || it.new_code || '';
+    const dl = it.desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return c === pacoteDietaCode || (dl.includes('pacote') && (dl.includes('dieta') || dl.includes('administracao de dieta') || dl.includes('adm dieta')));
+  });
+  if(hasDieta && !hasPacoteDieta) {
+    const pPrice = svcPrices[pacoteDietaCode] || 55.00;
+    const daysMatch = (result.period || '').match(/(\d+)\s*dia/i);
+    const days = daysMatch ? parseInt(daysMatch[1]) : 30;
+    result.materiais.push({
+      desc: 'PACOTE PARA ADMINISTRACAO DE DIETA (EQUIPO, FRASCO, SERINGA E DEMAIS INSUMOS)',
+      old_code: '', new_code: pacoteDietaCode, code: pacoteDietaCode,
+      old_price: 0, new_price: pPrice, price: pPrice,
+      discount: 0, qty: days,
+      old_total: 0, new_total: pPrice * days, total: pPrice * days,
+      changed: true, auto_added: true,
+    });
+    result.changes_count++;
+    result.change_details.push({
+      desc: 'PACOTE ADM DIETA (auto-incluído)',
+      old_val: 'Não constava',
+      new_val: `${pacoteDietaCode} (R$ ${pPrice.toFixed(2)} × ${days}d = R$ ${(pPrice*days).toFixed(2)})`,
+    });
+    hasPacoteDieta = true;
+  }
+  if(hasPacoteDieta) {
+    const dietaKeywords = ['frasco', 'equipo', 'seringa', 'fracionador', 'sistema fechado'];
+    const isDietaAvulso = (dl) => dietaKeywords.some(kw => dl.includes(kw)) && !dl.includes('pacote');
+    for(const sec of ['materiais','equipamento','atendimento','dietas']) {
+      for(const item of result[sec]) {
+        const dl = item.desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        if(isDietaAvulso(dl)) {
+          item.discount = 100;
+          item.new_total = 0;
+          item.total = 0;
+        }
+      }
+    }
+  }
+
+  // Paciente com aspirador → auto-incluir PACOTE PARA ASPIRAÇÃO (sondas, luvas, insumos)
+  const hasAspirador = [...result.equipamento, ...result.materiais, ...result.atendimento].some(it => {
+    const c = it.new_code || it.code || '';
+    const dl = it.desc.toLowerCase();
+    return c === '81095325' || dl.includes('aspirador') || dl.includes('aspiracao') || dl.includes('aspiração');
+  });
+  if(hasAspirador) {
+    const pacoteAspCode = '81095503';
+    const hasPacoteAsp = [...result.materiais, ...result.equipamento].some(it =>
+      (it.code === pacoteAspCode || it.new_code === pacoteAspCode) ||
+      (it.desc.toLowerCase().includes('pacote') && (it.desc.toLowerCase().includes('aspirac') || it.desc.toLowerCase().includes('aspiração')))
+    );
+    if(!hasPacoteAsp) {
+      const aspPrice = svcPrices[pacoteAspCode] || 8.20;
+      const daysMatch = (result.period || '').match(/(\d+)\s*dia/i);
+      const days = daysMatch ? parseInt(daysMatch[1]) : 30;
+      result.materiais.push({
+        desc: 'PACOTE PARA ASPIRACAO (ASPIRADOR, SONDA DE ASPIRACAO, LUVA DE PROCEDIMENTO, LUVA ESTERIL E DEMAIS INSUMOS)',
+        old_code: '', new_code: pacoteAspCode, code: pacoteAspCode,
+        old_price: 0, new_price: aspPrice, price: aspPrice,
+        discount: 0, qty: days,
+        old_total: 0, new_total: aspPrice * days, total: aspPrice * days,
+        changed: true, auto_added: true,
+      });
+      result.changes_count++;
+      result.change_details.push({
+        desc: 'PACOTE ASPIRAÇÃO (auto-incluído)',
+        old_val: 'Não constava',
+        new_val: `${pacoteAspCode} (R$ ${aspPrice.toFixed(2)} × ${days}d = R$ ${(aspPrice*days).toFixed(2)})`,
+      });
+    }
+  }
+
+  // Diária Global: quando paciente tem diária 80031xxx, quase tudo é incluso (zera separado)
+  const hasDiariaGlobal = [...result.pacote, ...result.atendimento].some(
+    it => DIARIA_GLOBAL_CODES.has(it.new_code || it.old_code || it.code || '')
+  );
+  if(hasDiariaGlobal) {
+    const DIARIA_EXCLUSIONS = [
+      'torgena','vfend','mycamine','micafungin','voriconazol','anfotericina','imunoglobulina','albumina',
+      'hemotransfus','quimiotera','dialise','diálise','parenteral',
+    ];
+    const isExcluded = (desc) => {
+      const dl = desc.toLowerCase();
+      return DIARIA_EXCLUSIONS.some(kw => dl.includes(kw));
+    };
+    for(const sec of ['equipamento','materiais','dietas']) {
+      for(const item of result[sec]) {
+        if(!isExcluded(item.desc)) {
+          item.discount = 100;
+          item.total = 0;
+          item.new_total = 0;
+        }
+      }
+    }
+    for(const item of result.atendimento) {
+      const rc = item.new_code || item.old_code || '';
+      if(DIARIA_GLOBAL_CODES.has(rc)) continue;
+      if(!isExcluded(item.desc)) {
+        item.discount = 100;
+        item.new_total = 0;
+      }
+    }
+    for(const item of result.medicamentos) {
+      if(!isExcluded(item.desc)) {
+        item.discount = 100;
+        item.total = 0;
+        item.new_total = 0;
+      }
+    }
+  }
+
+  // Recategorizar: mover itens de materiais/equipamento que caíram na seção errada
+  const MATERIAIS_CODES = new Set(['81095260','81095490','81095279','81095287','81095295','81095303','81095311','81095320','81095338','81095346','81095354','81095362','81095370','81095389','81095397','81095406','81095414','81095422','81095431','81095449','81095457','81095465','81095473','81095481','81095503','81095511']);
+  const MATERIAIS_KW = ['equipo','frasco','seringa','gaze','luva','agulha','alcool','swab','cavilon','clorexidina','curafix','mepilex','tegaderm','conector','coletor','statlock','tampa protetora'];
+  for(const fromSec of ['atendimento','pacote','equipamento']) {
+    const toMove = [];
+    result[fromSec] = result[fromSec].filter(item => {
+      const rc = item.new_code || item.code || '';
+      const dl = (item.desc || '').toLowerCase();
+      const isMat = MATERIAIS_CODES.has(rc) || MATERIAIS_KW.some(kw => dl.includes(kw));
+      if(isMat) {
+        // Normalizar campos para formato materiais
+        if(item.total == null) item.total = item.new_total || 0;
+        if(item.price == null) item.price = item.new_price || item.old_price || 0;
+        if(item.new_total == null) item.new_total = item.total || 0;
+        if(item.new_price == null) item.new_price = item.price || 0;
+        toMove.push(item);
+        return false;
+      }
+      return true;
+    });
+    result.materiais.push(...toMove);
+  }
+
+  let totalOld = 0, totalNew = 0;
+  for(const section of ['pacote','atendimento','equipamento','medicamentos','materiais','dietas']) {
+    for(const item of result[section]) {
+      totalOld += item.old_total || 0;
+      totalNew += (section==='materiais' || section==='equipamento') ? (item.total || 0) : (item.new_total || 0);
+    }
+  }
+  result.total_old = Math.round(totalOld*100)/100;
+  result.total_new = Math.round(totalNew*100)/100;
+
+  return result;
+}
+
+// ================================================================
+// UPLOAD
+// ================================================================
+const uploadZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+let currentFile = null;
+let currentResult = null;
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if(fileInput.files.length) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  if(!file.name.toLowerCase().endsWith('.pdf')) {
+    alert('Por favor, selecione um arquivo PDF.');
+    return;
+  }
+  currentFile = file;
+  uploadZone.classList.add('has-file');
+  uploadZone.querySelector('p').textContent = file.name;
+  uploadZone.querySelector('small').textContent = `${(file.size/1024).toFixed(0)} KB — Processando...`;
+  processFile(file);
+}
+
+async function processFile(file) {
+  const processing = document.getElementById('processing');
+  const results = document.getElementById('results');
+  processing.style.display = 'block';
+  results.style.display = 'none';
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const { fullText, pageTexts } = await extractPdfText(arrayBuffer);
+    window._debugPdfText = fullText;
+    window._debugPageTexts = pageTexts;
+    console.log('=== RAW PDF TEXT ===\n' + fullText.substring(0, 5000));
+    const entity = document.getElementById('entity-select').value;
+    const data = parseBudgetPdf(fullText, pageTexts, entity);
+    currentResult = data;
+    displayResults(data);
+  } catch(err) {
+    console.error(err);
+    alert('Erro ao processar: ' + err.message);
+    resetUpload();
+  } finally {
+    processing.style.display = 'none';
+  }
+}
+
+function displayResults(data) {
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+
+  document.getElementById('result-patient').textContent = data.patient_name || 'Paciente';
+  document.getElementById('result-info').textContent =
+    `Matrícula: ${data.matricula || '—'} | Período: ${data.period || '—'} | Orçamento Nº ${data.orcamento_num || '—'}`;
+
+  document.getElementById('total-old').textContent = 'R$ ' + fmt(data.total_old);
+  document.getElementById('total-new').textContent = 'R$ ' + fmt(data.total_new);
+  document.getElementById('total-changes').textContent = data.changes_count;
+
+  renderItemTable('tbl-atend', data.atendimento, 'atend');
+
+  if(data.equipamento && data.equipamento.length) {
+    document.getElementById('section-equip').style.display = 'block';
+    renderItemTable('tbl-equip', data.equipamento, 'equip');
+  } else {
+    document.getElementById('section-equip').style.display = 'none';
+  }
+
+  renderItemTable('tbl-med', data.medicamentos, 'med');
+  renderItemTable('tbl-mat', data.materiais, 'mat');
+
+  if(data.dietas && data.dietas.length) {
+    document.getElementById('section-dietas').style.display = 'block';
+    renderItemTable('tbl-diet', data.dietas, 'diet');
+  } else {
+    document.getElementById('section-dietas').style.display = 'none';
+  }
+
+  uploadZone.querySelector('small').textContent = `${(currentFile.size/1024).toFixed(0)} KB — Processado ✓`;
+}
+
+function renderItemTable(tableId, items, type) {
+  const tbody = document.querySelector(`#${tableId} tbody`);
+  tbody.innerHTML = '';
+  if(!items || !items.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:16px">Nenhum item encontrado</td></tr>';
+    return;
+  }
+  items.forEach(item => {
+    const changed = item.changed;
+    const tr = document.createElement('tr');
+    if(changed) tr.classList.add('changed');
+
+    if(type==='atend') {
+      tr.innerHTML = `
+        <td>${item.desc}</td>
+        <td class="code">${item.old_code||'—'}</td>
+        <td class="code" style="color:#2e7d32;font-weight:600">${item.new_code||'—'}</td>
+        <td class="price">${fmt(item.old_price)}</td>
+        <td class="price" style="${changed?'color:#2e7d32;font-weight:600':''}">${fmt(item.new_price)}</td>
+        <td>${item.qty}</td>
+        <td class="price" style="font-weight:600">${fmt(item.new_total)}</td>
+        <td>${changed? '<span class="badge updated">Atualizado</span>':'<span class="badge kept">Mantido</span>'}</td>`;
+    } else if(type==='med') {
+      tr.innerHTML = `
+        <td>${item.desc}</td>
+        <td class="code">${item.code||'—'}</td>
+        <td class="price">${fmt(item.old_price)}</td>
+        <td class="price" style="${changed?'color:#2e7d32;font-weight:600':''}">${fmt(item.new_price)}</td>
+        <td>${item.discount}%</td>
+        <td>${item.qty}</td>
+        <td class="price" style="font-weight:600">${fmt(item.new_total)}</td>
+        <td>${item.anexo_v? '<span class="badge new-code">Anexo V</span>': changed? '<span class="badge updated">Atualizado</span>':'<span class="badge kept">Mantido</span>'}</td>`;
+    } else if(type==='equip') {
+      tr.innerHTML = `
+        <td>${item.desc}</td>
+        <td class="code">${item.new_code||item.code||'—'}</td>
+        <td class="price">${fmt(item.old_price)}</td>
+        <td class="price" style="${changed?'color:#2e7d32;font-weight:600':''}">${fmt(item.new_price)}</td>
+        <td>${item.discount}%</td>
+        <td>${item.qty}</td>
+        <td class="price" style="font-weight:600">${fmt(item.new_total)}</td>
+        <td>${changed? '<span class="badge updated">Anexo VI</span>':'<span class="badge kept">Mantido</span>'}</td>`;
+    } else if(type==='mat') {
+      tr.innerHTML = `
+        <td>${item.desc}</td>
+        <td class="code">${item.code||'—'}</td>
+        <td class="price">${fmt(item.price)}</td>
+        <td>${item.discount}%</td>
+        <td>${item.qty}</td>
+        <td class="price">${fmt(item.total)}</td>
+        <td><span class="badge kept">SIMPRO/Brasíndice PF</span></td>`;
+    } else {
+      tr.innerHTML = `
+        <td>${item.desc}</td>
+        <td class="code">${item.code||'—'}</td>
+        <td class="price">${fmt(item.old_price)}</td>
+        <td class="price" style="${changed?'color:#2e7d32;font-weight:600':''}">${fmt(item.new_price)}</td>
+        <td>${item.qty}</td>
+        <td class="price" style="font-weight:600">${fmt(item.new_total)}</td>
+        <td>${changed? '<span class="badge updated">Anexo VI</span>':'<span class="badge kept">Mantido</span>'}</td>`;
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+// ================================================================
+// GERAR PDF (jsPDF + autoTable + pdf-lib, 100% client-side)
+// ================================================================
+function sumField(arr, field) {
+  if(!arr) return 0;
+  return arr.reduce((s,i) => s + (i[field] || 0), 0);
+}
+
+function drawBeigeTitleBar(doc, text, x, y, w) {
+  doc.setFillColor(245,245,220);
+  doc.setDrawColor(0,0,0);
+  doc.setLineWidth(0.5);
+  doc.rect(x, y, w, 16, 'FD');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0,0,0);
+  doc.text(text, x+w/2, y+11, {align:'center'});
+  return y+16+6;
+}
+
+function drawPlainTitle(doc, text, x, y, w) {
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0,0,0);
+  doc.text(text, x+w/2, y+8, {align:'center'});
+  return y+18;
+}
+
+async function buildBudgetPdfBytes(data) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const PAGE_W = 595.28, PAGE_H = 841.89;
+  const ML=36, MR=36, MT=30, MB=30;
+  const CW = PAGE_W - ML - MR;
+  const BEIGE = [245,245,220], BLACKC = [0,0,0], WHITEC = [255,255,255];
+
+  let y = MT;
+
+  // ---- HEADER ----
+  doc.setFillColor(...BEIGE);
+  doc.rect(ML, y, CW, 42, 'F');
+  doc.setDrawColor(0,0,0);
+  doc.setLineWidth(0.75);
+  doc.rect(ML, y, CW, 42);
+  doc.setTextColor(0,0,0);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text('Global Care', ML+10, y+25);
+  doc.setFontSize(13);
+  doc.text(`ORÇAMENTO Nº ${data.orcamento_num||''}`, ML+CW/2, y+25, {align:'center'});
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.text('R220', ML+CW-10, y+25, {align:'right'});
+  y += 42 + 6;
+
+  doc.setLineWidth(1);
+  doc.line(ML, y, ML+CW, y);
+  y += 14;
+
+  // ---- 1 - Dados Pessoais ----
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9);
+  doc.text('1 - Dados Pessoais', ML, y);
+  y += 13;
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8.5);
+  doc.text(`    Paciente: ${data.patient_name||''}`, ML, y); y += 11;
+  doc.text(`    Matrícula: ${data.matricula||''}`, ML, y); y += 14;
+  if(data.period) {
+    doc.setFont('helvetica','bold');
+    doc.text(`Período: ${data.period}`, ML, y);
+    y += 18;
+  } else { y += 4; }
+
+  // ---- PACOTE ----
+  if(data.pacote && data.pacote.length) {
+    y = drawBeigeTitleBar(doc, 'Pacote', ML, y, CW);
+    const pRows = data.pacote.map(item => {
+      const codeStr = item.new_code ? `[${item.new_code}] - ` : '';
+      return [`${codeStr}${item.desc}`, fmt(item.old_price||0), String(Math.trunc(item.discount||0)), fmt(0), '', '', '', fmt(item.old_total||0)];
+    });
+    pRows.push(['SubTotal Pacote','','','','','','', fmt(sumField(data.pacote, 'old_total'))]);
+    doc.autoTable({
+      startY: y, margin: {left:ML, right:MR}, theme: 'grid',
+      styles: {font:'helvetica', fontSize:7.5, cellPadding:2, lineColor:[0,0,0], lineWidth:0.5, textColor:[0,0,0], valign:'middle'},
+      head: [['Pacote','Preço Tabela (R$)','Desconto (%)','Preço Unitário','Dias','Qtd Pacote Por Dia','Qtd Total de Pacote','Total (R$)']],
+      headStyles: {fillColor:BEIGE, textColor:[0,0,0], fontStyle:'bold', fontSize:6.5, halign:'center'},
+      columnStyles: {0:{cellWidth:CW*0.30,halign:'left'},1:{cellWidth:CW*0.10,halign:'right'},2:{cellWidth:CW*0.09,halign:'center'},3:{cellWidth:CW*0.10,halign:'right'},4:{cellWidth:CW*0.08,halign:'center'},5:{cellWidth:CW*0.12,halign:'center'},6:{cellWidth:CW*0.10,halign:'center'},7:{cellWidth:CW*0.11,halign:'right'}},
+      body: pRows,
+      didParseCell(d) { if(d.row.index===pRows.length-1) d.cell.styles.fontStyle='bold'; }
+    });
+    y = doc.lastAutoTable.finalY + 14;
+  }
+
+  // ---- RESUMO ----
+  const subAtend = sumField(data.atendimento, 'new_total');
+  const subEquip = sumField(data.equipamento, 'total');
+  const subMed = sumField(data.medicamentos, 'new_total');
+  const subMat = sumField(data.materiais, 'total');
+  const subDiet = sumField(data.dietas, 'new_total');
+  const orcTotal = subAtend + subEquip + subMed + subMat + subDiet;
+
+  y = drawBeigeTitleBar(doc, 'RESUMO', ML, y, CW);
+
+  const resumoRows = [
+    ['Atendimento Profissional', fmt(subAtend)],
+  ];
+  if(data.equipamento && data.equipamento.length) resumoRows.push(['Equipamento Mobiliário', fmt(subEquip)]);
+  resumoRows.push(['Medicamento', fmt(subMed)]);
+  resumoRows.push(['Material', fmt(subMat)]);
+  if(subDiet > 0) resumoRows.push(['Dieta', fmt(subDiet)]);
+  resumoRows.push(['TOTAL', fmt(orcTotal)]);
+
+  doc.autoTable({
+    startY: y,
+    margin: {left:ML, right:MR},
+    theme: 'grid',
+    styles: {font:'helvetica', fontSize:8, cellPadding:3, lineColor:[0,0,0], lineWidth:0.5, textColor:[0,0,0]},
+    head: [['Item','Valor Total (R$)']],
+    headStyles: {fillColor:BEIGE, textColor:[0,0,0], fontStyle:'bold', halign:'left'},
+    columnStyles: {0:{cellWidth:CW-120, halign:'left'}, 1:{cellWidth:120, halign:'right'}},
+    body: resumoRows,
+    didParseCell(d) {
+      if(d.section==='body' && d.row.index===resumoRows.length-1) d.cell.styles.fontStyle='bold';
+    }
+  });
+  y = doc.lastAutoTable.finalY + 14;
+
+  // ---- ATENDIMENTO PROFISSIONAL ----
+  if(data.atendimento && data.atendimento.length) {
+    y = drawPlainTitle(doc, 'ATENDIMENTO PROFISSIONAL', ML, y, CW);
+    const rows = data.atendimento.map(item => {
+      const codeStr = item.new_code ? `[${item.new_code}] - ` : '';
+      const ptab = item.new_price||0;
+      const dpct = item.discount||0;
+      const punit = ptab * (1 - dpct / 100);
+      return [
+        `${codeStr}${item.desc}`, fmt(ptab), String(Math.trunc(dpct)),
+        fmt(punit), String(Math.trunc(item.qty||1)), fmt(item.new_total||0),
+      ];
+    });
+    rows.push(['SubTotal Atendimento Profissional','','','','', fmt(subAtend)]);
+
+    doc.autoTable({
+      startY: y,
+      margin: {left:ML, right:MR},
+      theme: 'grid',
+      styles: {font:'helvetica', fontSize:7.5, cellPadding:2, lineColor:[0,0,0], lineWidth:0.5, textColor:[0,0,0], valign:'middle'},
+      head: [['Descrição','Preço Tabela (R$)','Desconto (%)','Preço Unitário (R$)','Quantidade','Total (R$)']],
+      headStyles: {fillColor:BEIGE, textColor:[0,0,0], fontStyle:'bold', fontSize:7, halign:'center'},
+      columnStyles: {
+        0:{cellWidth:CW*0.40, halign:'left'}, 1:{cellWidth:CW*0.12, halign:'right'},
+        2:{cellWidth:CW*0.11, halign:'center'}, 3:{cellWidth:CW*0.12, halign:'right'},
+        4:{cellWidth:CW*0.11, halign:'center'}, 5:{cellWidth:CW*0.14, halign:'right'},
+      },
+      body: rows,
+      didParseCell(d) { if(d.row.index===rows.length-1) d.cell.styles.fontStyle='bold'; }
+    });
+    y = doc.lastAutoTable.finalY + 14;
+  }
+
+  // ---- MEDICAMENTOS / MATERIAIS / DIETAS ----
+  function itemSection(title, items, subtotalVal, subtotalLabel, isMaterial) {
+    if(!items || !items.length) return;
+    y = drawPlainTitle(doc, title, ML, y, CW);
+    const rows = items.map(item => {
+      const ptab = isMaterial ? (item.price||0) : (item.new_price||0);
+      const dpct = item.discount||0;
+      const punit = ptab * (1 - dpct / 100);
+      const total = isMaterial ? (item.total||0) : (item.new_total||0);
+      const codeVal = item.code || item.new_code || '';
+      const codeStr = codeVal ? `[${codeVal}] - ` : '';
+      return [`${codeStr}${item.desc}`, '', fmt(ptab), String(Math.trunc(dpct)), fmt(punit), String(Math.trunc(item.qty||1)), fmt(total)];
+    });
+    rows.push([subtotalLabel,'','','','','', fmt(subtotalVal)]);
+
+    doc.autoTable({
+      startY: y,
+      margin: {left:ML, right:MR},
+      theme: 'grid',
+      styles: {font:'helvetica', fontSize:7.5, cellPadding:2, lineColor:[0,0,0], lineWidth:0.5, textColor:[0,0,0], valign:'middle'},
+      head: [['Descrição','Aplicação','Preço Tabela (R$)','Desconto (%)','Preço Unitário (R$)','Quantidade','Total (R$)']],
+      headStyles: {fillColor:BEIGE, textColor:[0,0,0], fontStyle:'bold', fontSize:7, halign:'center'},
+      columnStyles: {
+        0:{cellWidth:CW*0.28, halign:'left'}, 1:{cellWidth:CW*0.10, halign:'center'},
+        2:{cellWidth:CW*0.12, halign:'right'}, 3:{cellWidth:CW*0.09, halign:'center'},
+        4:{cellWidth:CW*0.14, halign:'right'}, 5:{cellWidth:CW*0.11, halign:'center'},
+        6:{cellWidth:CW*0.16, halign:'right'},
+      },
+      body: rows,
+      didParseCell(d) { if(d.row.index===rows.length-1) d.cell.styles.fontStyle='bold'; }
+    });
+    y = doc.lastAutoTable.finalY + 14;
+  }
+
+  itemSection('EQUIPAMENTO MOBILIÁRIO', data.equipamento, subEquip, 'SubTotal Equipamento', true);
+  itemSection('DIETAS', data.dietas, subDiet, 'SubTotal Dieta', false);
+  itemSection('MEDICAMENTOS', data.medicamentos, subMed, 'SubTotal Medicamento', false);
+  itemSection('MATERIAIS', data.materiais, subMat, 'SubTotal Material', true);
+
+  // ---- SubTotal MMD ----
+  const subMMD = subMed + subMat + subDiet;
+  doc.autoTable({
+    startY: y,
+    margin: {left:ML, right:MR},
+    theme: 'grid',
+    styles: {font:'helvetica', fontSize:8, cellPadding:3, lineColor:[0,0,0], lineWidth:0.5, textColor:[0,0,0], fontStyle:'bold'},
+    body: [[ 'SubTotal  Materiais - Medicamentos - Dietas', fmt(subMMD) ]],
+    columnStyles: {0:{cellWidth:CW*0.84, halign:'left'}, 1:{cellWidth:CW*0.16, halign:'right'}},
+  });
+  y = doc.lastAutoTable.finalY + 10;
+
+  // ---- ORÇAMENTO TOTAL ----
+  doc.autoTable({
+    startY: y,
+    margin: {left:ML, right:MR},
+    theme: 'grid',
+    styles: {font:'helvetica', fontSize:9, cellPadding:5, lineColor:[0,0,0], lineWidth:1, textColor:WHITEC, fillColor:BLACKC, fontStyle:'bold'},
+    body: [[ 'Orçamento Total', fmt(orcTotal) ]],
+    columnStyles: {0:{cellWidth:CW*0.84, halign:'left'}, 1:{cellWidth:CW*0.16, halign:'right'}},
+  });
+  y = doc.lastAutoTable.finalY + 12;
+
+  // ---- FOOTER ----
+  if(y > PAGE_H - MB - 20) { doc.addPage(); y = MT; }
+  const now = new Date();
+  const nowStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(0,0,0);
+  doc.text(nowStr, ML, y);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('RELATÓRIO DE ORÇAMENTO', ML+CW/2, y, {align:'center'});
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(0,102,204);
+  doc.text('Syscare', ML+CW, y, {align:'right'});
+
+  return doc.output('arraybuffer');
+}
+
+async function mergePdfs(originalArrayBuffer, budgetArrayBuffer, assessmentPages) {
+  const { PDFDocument } = PDFLib;
+  const merged = await PDFDocument.create();
+  const original = await PDFDocument.load(originalArrayBuffer);
+  const budget = await PDFDocument.load(budgetArrayBuffer);
+
+  const nOrig = Math.min(assessmentPages, original.getPageCount());
+  if(nOrig > 0) {
+    const origPages = await merged.copyPages(original, Array.from({length:nOrig}, (_,i)=>i));
+    origPages.forEach(p => merged.addPage(p));
+  }
+
+  const budgetPages = await merged.copyPages(budget, Array.from({length:budget.getPageCount()}, (_,i)=>i));
+  budgetPages.forEach(p => merged.addPage(p));
+
+  return await merged.save();
+}
+
+async function generatePDF() {
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando...';
+
+  try {
+    const budgetBytes = await buildBudgetPdfBytes(currentResult);
+    const originalArrayBuffer = await currentFile.arrayBuffer();
+    let assessmentPages = currentResult.assessment_pages;
+    if(assessmentPages < 0) assessmentPages = 0;
+    const mergedBytes = await mergePdfs(originalArrayBuffer, budgetBytes, assessmentPages);
+
+    const blob = new Blob([mergedBytes], {type:'application/pdf'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const fname = currentResult.matricula
+      ? `${currentResult.matricula} - ${currentResult.patient_name} - AVALIACAO + ORCAMENTO (CODIGOS 2026).pdf`
+      : currentFile.name.replace('.pdf',' (CODIGOS 2026).pdf');
+    a.href = url; a.download = fname; a.click();
+    URL.revokeObjectURL(url);
+
+    await saveHistoryEntry({
+      usuario: getUserName(),
+      filename: currentFile.name,
+      status: 'SUCESSO',
+      changes_count: currentResult.changes_count,
+      total_old: currentResult.total_old,
+      total_new: currentResult.total_new,
+      patient_name: currentResult.patient_name,
+      details: currentResult.change_details || [],
+      entity: document.getElementById('entity-select').value,
+    });
+
+    btn.textContent = '✓ PDF Gerado!';
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-success');
+    setTimeout(() => {
+      btn.textContent = '📥 Gerar PDF Corrigido';
+      btn.classList.remove('btn-success');
+      btn.classList.add('btn-primary');
+      btn.disabled = false;
+    }, 2000);
+  } catch(err) {
+    console.error(err);
+    alert('Erro ao gerar PDF: ' + err.message);
+    btn.textContent = '📥 Gerar PDF Corrigido';
+    btn.disabled = false;
+  }
+}
+
+function generateComparativoPDF() {
+  if(!currentResult) { alert('Nenhum orçamento processado.'); return; }
+  const btn = document.getElementById('btn-comparativo');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando...';
+
+  try {
+    const data = currentResult;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'pt', format:'a4', orientation:'landscape'});
+    const PW = 841.89, PH = 595.28;
+    const ML=30, MR=30, MT=30, MB=30;
+    const CW = PW - ML - MR;
+
+    let y = MT;
+
+    doc.setFillColor(228,31,27);
+    doc.rect(ML, y, CW, 36, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.text('COMPARATIVO DE CORREÇÕES — Orçamento Bradesco 2026', ML+CW/2, y+24, {align:'center'});
+    y += 36 + 12;
+
+    doc.setTextColor(0,0,0);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.text(`Paciente: ${data.patient_name||''}`, ML, y);
+    doc.text(`Matrícula: ${data.matricula||''}`, ML+300, y);
+    doc.text(`Período: ${data.period||''}`, ML+550, y);
+    y += 12;
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, ML, y);
+    doc.text(`Operadora: BRADESCO SAUDE`, ML+300, y);
+    y += 16;
+
+    doc.setFillColor(240,240,240);
+    doc.rect(ML, y, CW, 28, 'F');
+    doc.setDrawColor(200,200,200);
+    doc.rect(ML, y, CW, 28);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(0,0,0);
+    doc.text(`Total Original: R$ ${fmt(data.total_old)}`, ML+10, y+18);
+    doc.text(`Total Corrigido: R$ ${fmt(data.total_new)}`, ML+250, y+18);
+    const diff = data.total_new - data.total_old;
+    const pct = data.total_old > 0 ? ((diff / data.total_old)*100).toFixed(1) : '0.0';
+    const diffSign = diff >= 0 ? '+' : '';
+    doc.text(`Diferença: ${diffSign}R$ ${fmt(Math.abs(diff))} (${diffSign}${pct}%)`, ML+500, y+18);
+    y += 28 + 14;
+
+    const sections = [
+      {key:'pacote', title:'PACOTE'},
+      {key:'atendimento', title:'ATENDIMENTO PROFISSIONAL'},
+      {key:'equipamento', title:'EQUIPAMENTO MOBILIÁRIO'},
+      {key:'dietas', title:'DIETAS'},
+      {key:'medicamentos', title:'MEDICAMENTOS'},
+      {key:'materiais', title:'MATERIAIS'},
+    ];
+
+    for(const sec of sections) {
+      const items = data[sec.key];
+      if(!items || !items.length) continue;
+
+      const hasChanges = items.some(it => it.changed || it.auto_added
+        || (it.old_code && it.new_code && it.old_code !== it.new_code)
+        || Math.abs((it.old_price||0) - (it.new_price||0)) > 0.01
+        || (it.discount > 0 && it.discount !== 100));
+
+      const rows = items.map(it => {
+        const oldCode = it.old_code || it.code || '';
+        const newCode = it.new_code || oldCode;
+        const codeChanged = oldCode !== newCode && oldCode && newCode;
+        const oldP = it.old_price || 0;
+        const newP = it.new_price || oldP;
+        const priceChanged = Math.abs(oldP - newP) > 0.01;
+        const disc = it.discount || 0;
+        const oldT = it.old_total || 0;
+        const newT = sec.key === 'materiais' || sec.key === 'equipamento' ? (it.total || 0) : (it.new_total || 0);
+        const totalChanged = Math.abs(oldT - newT) > 0.01;
+        const qty = it.qty || 0;
+
+        let status = '';
+        if(it.auto_added) status = 'AUTO-INCLUÍDO';
+        else if(codeChanged && priceChanged) status = 'CÓD + PREÇO';
+        else if(codeChanged) status = 'CÓD ATUALIZ.';
+        else if(priceChanged) status = 'PREÇO ATUALIZ.';
+        else if(disc === 100 && oldT > 0.01) status = 'ZERADO (PACOTE)';
+        else if(disc === 100) status = 'CORTESIA';
+        else status = 'MANTIDO';
+
+        return {
+          desc: it.desc || '',
+          oldCode, newCode: codeChanged ? newCode : '',
+          oldPrice: fmt(oldP), newPrice: priceChanged ? fmt(newP) : '',
+          disc: disc > 0 ? `${disc}%` : '0%',
+          qty: String(qty),
+          oldTotal: fmt(oldT), newTotal: fmt(newT),
+          status,
+          changed: codeChanged || priceChanged || totalChanged || it.auto_added,
+        };
+      });
+
+      doc.autoTable({
+        startY: y,
+        margin: {left:ML, right:MR},
+        head: [[sec.title, 'Cód Antigo', 'Cód 2026', 'Preço Ant.', 'Preço 2026', 'Desc%', 'Qtd', 'Total Ant.', 'Total 2026', 'Status']],
+        body: rows.map(r => [r.desc, r.oldCode, r.newCode, r.oldPrice, r.newPrice, r.disc, r.qty, r.oldTotal, r.newTotal, r.status]),
+        headStyles: {fillColor:[228,31,27], textColor:[255,255,255], fontStyle:'bold', fontSize:7, halign:'center'},
+        bodyStyles: {fontSize:7, cellPadding:3},
+        columnStyles: {
+          0: {cellWidth:200, halign:'left'},
+          1: {cellWidth:60, halign:'center'},
+          2: {cellWidth:60, halign:'center'},
+          3: {cellWidth:55, halign:'right'},
+          4: {cellWidth:55, halign:'right'},
+          5: {cellWidth:35, halign:'center'},
+          6: {cellWidth:30, halign:'center'},
+          7: {cellWidth:60, halign:'right'},
+          8: {cellWidth:60, halign:'right'},
+          9: {cellWidth:70, halign:'center'},
+        },
+        didParseCell: function(d) {
+          if(d.section === 'body') {
+            const r = rows[d.row.index];
+            if(r && r.changed) {
+              d.cell.styles.fillColor = [255,255,230];
+              d.cell.styles.fontStyle = 'bold';
+            }
+            if(d.column.index === 9) {
+              const st = r ? r.status : '';
+              if(st.includes('ATUALIZ') || st === 'AUTO-INCLUÍDO') {
+                d.cell.styles.textColor = [0,100,0];
+              } else if(st.includes('ZERADO')) {
+                d.cell.styles.textColor = [0,0,180];
+              } else if(st === 'CORTESIA') {
+                d.cell.styles.textColor = [120,120,120];
+              }
+            }
+          }
+        },
+        theme: 'grid',
+      });
+
+      y = doc.lastAutoTable.finalY + 10;
+    }
+
+    if(y + 60 > PH - MB) { doc.addPage(); y = MT; }
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(7.5);
+    doc.setTextColor(150,150,150);
+    doc.text('Documento interno para conferência da equipe — não enviar para operadora.', ML, y+10);
+    doc.text('Linhas em amarelo indicam itens com alterações. Gerado automaticamente pelo corretor de orçamentos GGC.', ML, y+20);
+
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    const fname = data.matricula
+      ? `COMPARATIVO - ${data.matricula} - ${data.patient_name}.pdf`
+      : 'COMPARATIVO - ' + (currentFile ? currentFile.name.replace('.pdf','') : 'orcamento') + '.pdf';
+    a.href = url; a.download = fname; a.click();
+    URL.revokeObjectURL(url);
+
+    btn.textContent = '✓ Comparativo Gerado!';
+    btn.classList.add('btn-success');
+    setTimeout(() => {
+      btn.textContent = '📊 Comparativo (Equipe)';
+      btn.classList.remove('btn-success');
+      btn.disabled = false;
+    }, 2000);
+  } catch(err) {
+    console.error(err);
+    alert('Erro ao gerar comparativo: ' + err.message);
+    btn.textContent = '📊 Comparativo (Equipe)';
+    btn.disabled = false;
+  }
+}
+
+function reprocessFile() {
+  if(!currentFile) { alert('Nenhum arquivo carregado.'); return; }
+  processFile(currentFile);
+}
+
+function resetUpload() {
+  currentFile = null;
+  currentResult = null;
+  uploadZone.classList.remove('has-file');
+  uploadZone.querySelector('p').textContent = 'Arraste o arquivo ou clique para selecionar';
+  uploadZone.querySelector('small').textContent = 'PDF — máx. 50 MB';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('processing').style.display = 'none';
+  const btn = document.getElementById('btn-generate');
+  btn.textContent = '📥 Gerar PDF Corrigido';
+  btn.classList.remove('btn-success');
+  btn.classList.add('btn-primary');
+  btn.disabled = false;
+  fileInput.value = '';
+}
+
+// ================================================================
+// BASE OFICIAL
+// ================================================================
+let activeCategory = 'todos';
+const CAT_MAP = {
+  'todos':'Todos','Diaria':'Diárias','Servico':'Serviços','Equipamento':'Equipamentos',
+  'Materiais':'Materiais','Medicamento':'Medicamentos','Dieta':'Dietas'
+};
+
+function catBadgeClass(cat) {
+  if(cat==='Servico') return 'new-code';
+  if(cat==='Medicamento') return 'updated';
+  if(cat==='Dieta') return 'error';
+  return 'kept';
+}
+
+async function renderBase() {
+  const entity = document.getElementById('base-entity').value;
+  const search = document.getElementById('base-search').value.toLowerCase();
+  const base = await loadBase(entity);
+
+  const cats = Object.entries(CAT_MAP);
+  const pillsEl = document.getElementById('category-pills');
+  pillsEl.innerHTML = cats.map(([key, label]) => {
+    const cnt = key==='todos' ? base.length : base.filter(i=>i.cat===key).length;
+    return `<button class="pill ${activeCategory===key?'active':''}" onclick="activeCategory='${key}';renderBase()">${label} (${cnt})</button>`;
+  }).join('');
+
+  let items = activeCategory==='todos' ? base : base.filter(i=>i.cat===activeCategory);
+
+  if(search) {
+    items = items.filter(i =>
+      i.code.toLowerCase().includes(search) ||
+      i.desc.toLowerCase().includes(search) ||
+      i.cat.toLowerCase().includes(search)
+    );
+  }
+
+  const tbody = document.querySelector('#tbl-base tbody');
+  tbody.innerHTML = items.map(i => `
+    <tr>
+      <td class="code">${i.code}</td>
+      <td>${i.desc}</td>
+      <td><span class="badge ${catBadgeClass(i.cat)}">${i.cat}</span></td>
+      <td class="price">${fmt(i.price)}</td>
+      <td>${i.unit}</td>
+      <td><button style="border:none;background:none;color:#c0392b;cursor:pointer;font-size:16px" title="Excluir" onclick="deleteItem('${i.code}')">&#10005;</button></td>
+    </tr>
+  `).join('');
+
+  const total = base.length;
+  document.getElementById('base-count').textContent = total;
+  document.getElementById('base-vigentes').textContent = total;
+  const mgmt = document.getElementById('base-count-mgmt');
+  if(mgmt) mgmt.textContent = total + ' itens cadastrados';
+}
+
+async function deleteItem(code) {
+  if(!confirm('Excluir item ' + code + '?')) return;
+  const entity = document.getElementById('base-entity').value;
+  await persistDelete(entity, code);
+  renderBase();
+}
+
+function toggleAddForm() {
+  document.getElementById('add-form').classList.toggle('open');
+}
+
+async function addItem() {
+  const code = document.getElementById('add-code').value.trim();
+  const desc = document.getElementById('add-desc').value.trim();
+  const cat = document.getElementById('add-cat').value;
+  const priceStr = document.getElementById('add-price').value.trim().replace(',','.');
+  const unit = document.getElementById('add-unit').value.trim();
+  if(!code||!desc||!priceStr) { alert('Preencha código, descrição e preço.'); return; }
+  const price = parseFloat(priceStr);
+  if(isNaN(price)) { alert('Preço inválido.'); return; }
+  const entity = document.getElementById('base-entity').value;
+  const base = await loadBase(entity);
+  if(base.find(i=>i.code===code)) { alert('Código já existe na base.'); return; }
+  await persistAdd(entity, {code, cat, desc, price, unit: unit||'un'});
+  document.getElementById('add-code').value='';
+  document.getElementById('add-desc').value='';
+  document.getElementById('add-price').value='';
+  document.getElementById('add-unit').value='';
+  renderBase();
+}
+
+async function reimportBase() {
+  if(!confirm('Isso vai substituir TODA a base atual pela base oficial padrão 2026. Deseja continuar?')) return;
+  const entity = document.getElementById('base-entity').value;
+  await persistReplaceAll(entity, [...DEFAULT_BASE_SP]);
+  renderBase();
+}
+
+async function exportCSV() {
+  const entity = document.getElementById('base-entity').value;
+  const base = await loadBase(entity);
+  let csv = 'codigo;categoria;descricao;preco;unidade\n';
+  base.forEach(i => {
+    csv += `${i.code};${i.cat};${i.desc.replace(/;/g,',')};${i.price.toFixed(2).replace('.',',')};${i.unit}\n`;
+  });
+  downloadFile(csv, `base_bradesco_2026_${entity}.csv`, 'text/csv;charset=utf-8');
+}
+
+async function exportJSON() {
+  const entity = document.getElementById('base-entity').value;
+  const base = await loadBase(entity);
+  downloadFile(JSON.stringify(base, null, 2), `base_bradesco_2026_${entity}.json`, 'application/json');
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob(['﻿'+content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importCSV() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.csv';
+  inp.onchange = () => {
+    const f = inp.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const lines = reader.result.split('\n').filter(l=>l.trim());
+      const items = [];
+      for(let idx=1; idx<lines.length; idx++) {
+        const parts = lines[idx].split(';');
+        if(parts.length<5) continue;
+        items.push({
+          code: parts[0].trim(),
+          cat: parts[1].trim(),
+          desc: parts[2].trim(),
+          price: parseFloat(parts[3].trim().replace(',','.')),
+          unit: parts[4].trim()
+        });
+      }
+      if(!items.length) { alert('Nenhum item encontrado no CSV.'); return; }
+      const entity = document.getElementById('base-entity').value;
+      await persistReplaceAll(entity, items);
+      renderBase();
+      alert(items.length + ' itens importados.');
+    };
+    reader.readAsText(f);
+  };
+  inp.click();
+}
+
+function importJSON() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = () => {
+    const f = inp.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const items = JSON.parse(reader.result);
+        if(!Array.isArray(items)||!items.length) { alert('JSON inválido ou vazio.'); return; }
+        const entity = document.getElementById('base-entity').value;
+        await persistReplaceAll(entity, items);
+        renderBase();
+        alert(items.length + ' itens importados.');
+      } catch(e) { alert('Erro ao ler JSON: ' + e.message); }
+    };
+    reader.readAsText(f);
+  };
+  inp.click();
+}
+
+// ================================================================
+// HISTÓRICO
+// ================================================================
+function clearHistory() {
+  alert('O histórico é uma base compartilhada entre toda a equipe e não pode ser apagado por aqui. Fale com o administrador se precisar remover algum registro.');
+}
+
+async function renderHistory() {
+  const hist = await loadHistory();
+  const tbody = document.getElementById('hist-body');
+  const empty = document.getElementById('hist-empty');
+  empty.style.display = hist.length ? 'none' : 'block';
+
+  tbody.innerHTML = '';
+  hist.forEach((entry, idx) => {
+    const dt = new Date(entry.timestamp);
+    const dateStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR');
+
+    const mainRow = document.createElement('tr');
+    mainRow.className = 'hist-row';
+    mainRow.onclick = () => toggleDetail(idx);
+    mainRow.innerHTML = `
+      <td>${dateStr}</td>
+      <td>${entry.filename}</td>
+      <td><span class="hist-status ${entry.status==='SUCESSO'?'ok':'err'}">${entry.status}</span></td>
+      <td>${entry.changes}</td>
+      <td class="price">R$ ${fmt(entry.total_old||0)}</td>
+      <td class="price" style="font-weight:600;color:#2e7d32">R$ ${fmt(entry.total_new||0)}</td>`;
+    tbody.appendChild(mainRow);
+
+    const detailRow = document.createElement('tr');
+    detailRow.className = 'hist-detail';
+    detailRow.id = 'detail-' + idx;
+    let detailHTML = `<td colspan="6"><strong>${entry.patient||'—'}</strong><br><br>`;
+    if(entry.details && entry.details.length) {
+      detailHTML += '<div class="detail-grid">';
+      entry.details.forEach(d => {
+        detailHTML += `<div class="detail-item">
+          <span>${d.desc}</span>
+          <span><span class="old">${d.old_val}</span> → <span class="new">${d.new_val}</span></span>
+        </div>`;
+      });
+      detailHTML += '</div>';
+    } else {
+      detailHTML += '<em style="color:#999">Detalhes não disponíveis para este processamento.</em>';
+    }
+    detailHTML += '</td>';
+    detailRow.innerHTML = detailHTML;
+    tbody.appendChild(detailRow);
+  });
+}
+
+function toggleDetail(idx) {
+  const el = document.getElementById('detail-' + idx);
+  el.classList.toggle('open');
+}
+
+// ================================================================
+// INIT
+// ================================================================
+(async function init() {
+  try { initSupabase(); } catch(e) { console.error(e); }
+  try { ensureUserName(); } catch(e) { console.error(e); }
+  try { await testSupabaseConnection(); } catch(e) { console.error(e); }
+  try { await renderBase(); } catch(e) { console.error(e); }
+  try { await renderHistory(); } catch(e) { console.error(e); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2796 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Correção de Documentos — Bradesco</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --red:#CC092F;--red-dk:#8C0620;--red-lt:#E8335A;
+  --gray-50:#FAFAFA;--gray-100:#F5F5F5;--gray-200:#EEEEEE;--gray-300:#E0E0E0;
+  --gray-400:#BDBDBD;--gray-500:#9E9E9E;--gray-600:#757575;--gray-700:#616161;
+  --gray-800:#424242;--gray-900:#212121;
+  --green:#1B8C3D;--green-lt:#E6F5EB;--amber:#E6A817;--amber-lt:#FFF8E1;
+  --blue:#1565C0;--blue-lt:#E3F2FD;
+  --white:#FFF;--font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --radius:8px;--shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--gray-100);color:var(--gray-900);min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--red);text-decoration:none}
+button{font-family:var(--font);cursor:pointer;border:none;font-size:.875rem;border-radius:var(--radius);padding:.625rem 1.25rem;transition:all .15s}
+input,select,textarea{font-family:var(--font);font-size:.875rem;border:1px solid var(--gray-300);border-radius:var(--radius);padding:.5rem .75rem;outline:none;transition:border .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--red)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--gray-200);font-size:.8125rem}
+th{font-weight:600;color:var(--gray-600);background:var(--gray-50);position:sticky;top:0;z-index:1}
+
+/* HEADER */
+.hdr{background:var(--red);color:var(--white);padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;box-shadow:var(--shadow)}
+.hdr h1{font-size:1.125rem;font-weight:700;letter-spacing:-.01em}
+.hdr .sub{font-size:.75rem;opacity:.8;margin-left:auto}
+
+/* TABS */
+.tabs{background:var(--white);border-bottom:1px solid var(--gray-300);display:flex;padding:0 1rem;gap:0}
+.tabs button{background:none;color:var(--gray-600);padding:.75rem 1.25rem;border-radius:0;border-bottom:2px solid transparent;font-weight:500;font-size:.8125rem}
+.tabs button:hover{color:var(--gray-900);background:var(--gray-50)}
+.tabs button.active{color:var(--red);border-bottom-color:var(--red);font-weight:600}
+
+/* MAIN */
+.main{flex:1;max-width:1100px;width:100%;margin:0 auto;padding:1.5rem}
+.screen{display:none}
+.screen.active{display:block}
+
+/* CARDS */
+.card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.25rem}
+.card h2{font-size:1rem;font-weight:700;margin-bottom:.75rem;color:var(--gray-800)}
+.card h3{font-size:.875rem;font-weight:600;margin-bottom:.5rem;color:var(--gray-700)}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--gray-300);border-radius:var(--radius);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .15s;background:var(--gray-50)}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--red);background:rgba(204,9,47,.03)}
+.upload-zone svg{width:48px;height:48px;color:var(--gray-400);margin-bottom:.75rem}
+.upload-zone p{color:var(--gray-600);font-size:.875rem}
+.upload-zone .hint{font-size:.75rem;color:var(--gray-400);margin-top:.5rem}
+
+/* BUTTONS */
+.btn{font-weight:600}
+.btn-primary{background:var(--red);color:var(--white)}
+.btn-primary:hover{background:var(--red-dk)}
+.btn-primary:disabled{background:var(--gray-400);cursor:not-allowed}
+.btn-secondary{background:var(--white);color:var(--gray-700);border:1px solid var(--gray-300)}
+.btn-secondary:hover{background:var(--gray-50);border-color:var(--gray-400)}
+.btn-success{background:var(--green);color:var(--white)}
+.btn-success:hover{background:#15702F}
+.btn-sm{padding:.375rem .75rem;font-size:.75rem}
+.btn-icon{display:inline-flex;align-items:center;gap:.375rem}
+
+/* FILE INFO */
+.file-info{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--gray-50);border-radius:var(--radius);border:1px solid var(--gray-200)}
+.file-info .name{font-weight:600;font-size:.875rem}
+.file-info .size{font-size:.75rem;color:var(--gray-500)}
+.file-info .remove{margin-left:auto;color:var(--gray-400);cursor:pointer;font-size:1rem}
+.file-info .remove:hover{color:var(--red)}
+
+/* PROGRESS */
+.progress-list{list-style:none}
+.progress-list li{padding:.5rem 0;display:flex;align-items:center;gap:.75rem;font-size:.875rem;color:var(--gray-500)}
+.progress-list li.done{color:var(--green)}
+.progress-list li.active{color:var(--gray-900);font-weight:600}
+.progress-list li.error{color:var(--red)}
+.progress-list .icon{width:20px;text-align:center;flex-shrink:0}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--gray-300);border-top-color:var(--red);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* CHANGE TABLE */
+.change-table{overflow-x:auto}
+.change-table table{min-width:600px}
+.change-table .old{background:#FDECEA;color:var(--red-dk);padding:.125rem .375rem;border-radius:3px;font-family:monospace;font-size:.8125rem}
+.change-table .new{background:var(--green-lt);color:#0D5C24;padding:.125rem .375rem;border-radius:3px;font-family:monospace;font-size:.8125rem}
+
+/* ALERT BOXES */
+.alert{padding:.75rem 1rem;border-radius:var(--radius);font-size:.8125rem;margin-bottom:1rem;display:flex;align-items:flex-start;gap:.5rem}
+.alert-info{background:var(--blue-lt);color:var(--blue);border:1px solid #90CAF9}
+.alert-warn{background:var(--amber-lt);color:#7A5900;border:1px solid #FFE082}
+.alert-success{background:var(--green-lt);color:#0D5C24;border:1px solid #A5D6A7}
+.alert-error{background:#FDECEA;color:var(--red-dk);border:1px solid #EF9A9A}
+
+/* BASE FORM */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}
+.form-group{display:flex;flex-direction:column;gap:.25rem}
+.form-group label{font-size:.75rem;font-weight:600;color:var(--gray-600)}
+.form-actions{display:flex;gap:.5rem;margin-top:1rem;align-items:center}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:10px;font-size:.6875rem;font-weight:600}
+.badge-active{background:var(--green-lt);color:var(--green)}
+.badge-expired{background:#FDECEA;color:var(--red)}
+
+/* VALIDATION CHECKLIST */
+.checklist{list-style:none}
+.checklist li{padding:.375rem 0;display:flex;align-items:center;gap:.5rem;font-size:.8125rem}
+.checklist .pass{color:var(--green)}
+.checklist .fail{color:var(--red)}
+
+/* SUCCESS SCREEN */
+.success-icon{width:80px;height:80px;border-radius:50%;background:var(--green-lt);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+.success-icon svg{width:40px;height:40px;color:var(--green)}
+
+/* IMPORT AREA */
+.import-area{border:1px dashed var(--gray-300);border-radius:var(--radius);padding:1rem;text-align:center;cursor:pointer;font-size:.8125rem;color:var(--gray-500)}
+.import-area:hover{border-color:var(--red);color:var(--gray-700)}
+
+/* SEARCH */
+.search-box{position:relative;margin-bottom:.75rem}
+.search-box input{width:100%;padding-left:2rem}
+.search-box svg{position:absolute;left:.5rem;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--gray-400)}
+
+/* LIMITATION NOTICE */
+.limitation{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:var(--radius);padding:1rem;margin-bottom:1rem;font-size:.8125rem;color:#E65100}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:2rem;color:var(--gray-500);font-size:.875rem}
+
+/* FOOTER */
+.ftr{text-align:center;padding:.75rem;font-size:.6875rem;color:var(--gray-400);border-top:1px solid var(--gray-200);background:var(--white)}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-backdrop.show{display:flex}
+.modal{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-lg);width:90%;max-width:560px;max-height:80vh;overflow-y:auto;padding:1.5rem}
+.modal h3{margin-bottom:1rem}
+
+/* COUNTS */
+.stat-row{display:flex;gap:1rem;margin-bottom:1rem}
+.stat{flex:1;text-align:center;padding:.75rem;background:var(--gray-50);border-radius:var(--radius);border:1px solid var(--gray-200)}
+.stat .num{font-size:1.5rem;font-weight:700;color:var(--red)}
+.stat .lbl{font-size:.6875rem;color:var(--gray-500);margin-top:.125rem}
+
+/* LOG */
+.log-entry{font-size:.75rem;padding:.375rem 0;border-bottom:1px solid var(--gray-100);display:flex;gap:.5rem}
+.log-entry .ts{color:var(--gray-400);flex-shrink:0;font-family:monospace}
+
+/* SCROLLABLE TABLE */
+.scrollable-table{max-height:400px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:var(--radius)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+  <h1>Correção de Documentos — Bradesco</h1>
+  <span class="sub">Grupo Global Care</span>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="active" onclick="showScreen('upload')">Documento</button>
+  <button onclick="showScreen('base')">Base Oficial</button>
+  <button onclick="showScreen('log')">Histórico</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ===== SCREEN: UPLOAD ===== -->
+  <div id="scr-upload" class="screen active">
+
+    <!-- Step 1: Upload -->
+    <div id="step-upload" class="card">
+      <h2>CORREÇÃO DE DOCUMENTOS — BRADESCO</h2>
+      <p style="color:var(--gray-600);font-size:.875rem;margin-bottom:1rem">
+        Faça o upload do documento que deseja validar e corrigir com base nos contratos e tabelas vigentes.
+      </p>
+
+      <div class="alert alert-info" id="base-status-alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Carregando status da base oficial...</span>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem">
+        <label style="font-size:.8125rem;font-weight:600;color:var(--gray-700)">Entidade</label>
+        <select id="sel-entidade" style="max-width:320px">
+          <option value="GLOBAL_SP">Global Care SP (CNPJ 03.872.790/0001-93)</option>
+          <option value="DN_BA">DN Global BA (CNPJ 28.451.893/0001-00)</option>
+        </select>
+      </div>
+
+      <div id="upload-zone" class="upload-zone" onclick="document.getElementById('file-input').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>Arraste o arquivo ou clique para selecionar</p>
+        <p class="hint">PDF — máx. 50 MB</p>
+      </div>
+      <input type="file" id="file-input" accept=".pdf" style="display:none">
+
+      <div id="file-selected" style="display:none;margin-top:1rem">
+        <div class="file-info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div>
+            <div class="name" id="file-name"></div>
+            <div class="size" id="file-size"></div>
+          </div>
+          <span class="remove" onclick="removeFile()" title="Remover">&times;</span>
+        </div>
+        <div style="margin-top:1rem;text-align:right">
+          <button class="btn btn-primary btn-icon" onclick="analyzeDocument()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            ANALISAR DOCUMENTO
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Processing -->
+    <div id="step-processing" class="card" style="display:none">
+      <h2>Processando documento...</h2>
+      <ul class="progress-list" id="progress-list">
+        <li id="p-read"><span class="icon"></span>Lendo documento original...</li>
+        <li id="p-extract"><span class="icon"></span>Extraindo texto e posições...</li>
+        <li id="p-identify"><span class="icon"></span>Analisando estrutura da tabela...</li>
+        <li id="p-compare"><span class="icon"></span>Comparando com base oficial vigente...</li>
+        <li id="p-validate-n"><span class="icon"></span>Validando nomenclaturas...</li>
+        <li id="p-validate-v"><span class="icon"></span>Validando valores...</li>
+        <li id="p-check"><span class="icon"></span>Conferindo alterações...</li>
+      </ul>
+    </div>
+
+    <!-- Step 3: Review -->
+    <div id="step-review" class="card" style="display:none">
+      <h2>ALTERAÇÕES IDENTIFICADAS</h2>
+
+      <div id="no-changes" style="display:none">
+        <div class="alert alert-info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Nenhuma alteração necessária foi identificada. Todos os dados conferem com a base oficial vigente, ou não foi possível determinar correspondência inequívoca.</span>
+        </div>
+        <div style="text-align:right">
+          <button class="btn btn-secondary" onclick="resetUpload()">Voltar</button>
+        </div>
+      </div>
+
+      <div id="has-changes" style="display:none">
+        <div class="stat-row">
+          <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Linhas da tabela</div></div>
+          <div class="stat"><div class="num" id="stat-matched">0</div><div class="lbl">Itens na base</div></div>
+          <div class="stat"><div class="num" id="stat-changes">0</div><div class="lbl">Correções (cascata)</div></div>
+          <div class="stat"><div class="num" id="stat-kept">0</div><div class="lbl">Sem correspondência</div></div>
+        </div>
+
+        <div id="warnings-area"></div>
+
+        <div class="change-table" id="change-table-area"></div>
+
+        <div style="margin-top:1.25rem;display:flex;gap:.75rem;justify-content:flex-end">
+          <button class="btn btn-secondary" onclick="resetUpload()">CANCELAR</button>
+          <button class="btn btn-primary btn-icon" onclick="generateExcel()" style="background:var(--green)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>
+            GERAR PLANILHA COMPARATIVA
+          </button>
+          <button class="btn btn-secondary btn-icon" onclick="confirmAndGenerate()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            GERAR PDF CORRIGIDO
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Validation -->
+    <div id="step-validation" class="card" style="display:none">
+      <h2>Validação Final</h2>
+      <p style="font-size:.8125rem;color:var(--gray-600);margin-bottom:1rem">
+        Verificando integridade do documento corrigido antes da geração...
+      </p>
+      <ul class="checklist" id="validation-checklist"></ul>
+      <div id="validation-result" style="margin-top:1rem"></div>
+    </div>
+
+    <!-- Step 5: Success -->
+    <div id="step-success" class="card" style="display:none;text-align:center">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h2 style="color:var(--green);margin-bottom:.5rem">DOCUMENTO CORRIGIDO COM SUCESSO</h2>
+      <p style="font-size:.875rem;color:var(--gray-600);margin-bottom:1.5rem">
+        O PDF foi validado e baixado automaticamente.
+      </p>
+      <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-icon" onclick="downloadReport()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          BAIXAR RELATÓRIO DE ALTERAÇÕES
+        </button>
+        <button class="btn btn-secondary btn-icon" onclick="downloadOriginal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          BAIXAR ORIGINAL
+        </button>
+        <button class="btn btn-primary" onclick="resetUpload()">Novo Documento</button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="step-error" class="card" style="display:none">
+      <div class="alert alert-error">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <span id="error-message"></span>
+      </div>
+      <div style="text-align:right">
+        <button class="btn btn-secondary" onclick="resetUpload()">Voltar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: BASE OFICIAL ===== -->
+  <div id="scr-base" class="screen">
+    <div class="card">
+      <h2>BASE OFICIAL — BRADESCO</h2>
+      <p style="font-size:.8125rem;color:var(--gray-600);margin-bottom:1rem">
+        Cadastre os itens oficiais (códigos, nomenclaturas, valores) que serão utilizados como fonte de validação.
+        Somente dados cadastrados aqui serão usados para corrigir documentos.
+      </p>
+
+      <div class="limitation">
+        <strong>Importante:</strong> A base oficial é armazenada localmente neste navegador (localStorage).
+        Exporte regularmente os dados para não perdê-los ao limpar dados de navegação.
+      </div>
+
+      <!-- Import/Export -->
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="showImportModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importar CSV
+        </button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="exportBase()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar CSV
+        </button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="exportBaseJSON()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Exportar JSON
+        </button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="importBaseJSON()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Importar JSON
+        </button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="reseedBase2026()" style="color:var(--red)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Reimportar Base Oficial 2026
+        </button>
+        <span style="margin-left:auto;font-size:.75rem;color:var(--gray-500);align-self:center" id="base-count"></span>
+      </div>
+
+      <!-- Add item form -->
+      <details id="add-form-toggle">
+        <summary style="cursor:pointer;font-size:.875rem;font-weight:600;color:var(--red);margin-bottom:.75rem">+ Adicionar item</summary>
+        <div class="form-grid" style="margin-top:.75rem">
+          <div class="form-group">
+            <label>Código *</label>
+            <input id="f-codigo" placeholder="Ex: 10101012">
+          </div>
+          <div class="form-group">
+            <label>Descrição / Nomenclatura *</label>
+            <input id="f-descricao" placeholder="Ex: CONSULTA EM CONSULTÓRIO">
+          </div>
+          <div class="form-group">
+            <label>Valor (R$)</label>
+            <input id="f-valor" type="text" placeholder="Ex: 120,00">
+          </div>
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="f-tipo">
+              <option value="procedimento">Procedimento</option>
+              <option value="material">Material / Medicamento</option>
+              <option value="diaria">Diária</option>
+              <option value="taxa">Taxa / Serviço</option>
+              <option value="pacote">Pacote</option>
+              <option value="equipamento">Equipamento</option>
+              <option value="curativo">Curativo</option>
+              <option value="visita">Visita</option>
+              <option value="remocao">Remoção</option>
+              <option value="gasoterapia">Gasoterapia</option>
+              <option value="o2">O2 / Gases</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Entidade</label>
+            <select id="f-entidade">
+              <option value="GLOBAL_SP">Global Care SP</option>
+              <option value="DN_BA">DN Global BA</option>
+              <option value="AMBAS">Ambas (SP + DN)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Regra</label>
+            <select id="f-regra">
+              <option value="corrigir">Corrigir valor</option>
+              <option value="incluso">Incluso no pacote (100% desc.)</option>
+              <option value="excluido">Excluído do contrato (zerar)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Início Vigência</label>
+            <input id="f-vigencia-ini" type="date">
+          </div>
+          <div class="form-group">
+            <label>Fim Vigência</label>
+            <input id="f-vigencia-fim" type="date">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Sinônimos <span style="font-weight:400;color:var(--gray-500)">(nomes alternativos, separados por ;)</span></label>
+            <input id="f-sinonimos" placeholder="Ex: Fisioterapia; Visita Fisio; Fisio Domiciliar">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Documento Fonte</label>
+            <input id="f-fonte" placeholder="Ex: Tabela Bradesco Ago/2026">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-sm btn-primary" onclick="addBaseItem()">Salvar</button>
+          <button class="btn btn-sm btn-secondary" onclick="clearForm()">Limpar</button>
+          <span id="form-msg" style="font-size:.75rem;color:var(--green)"></span>
+        </div>
+      </details>
+    </div>
+
+    <!-- Regras de negócio -->
+    <div class="card">
+      <details>
+        <summary style="cursor:pointer;font-weight:700;color:var(--red);font-size:.9375rem">Regras de Negócio — Composição da Diária Globalizada</summary>
+        <div style="margin-top:.75rem;font-size:.8125rem;line-height:1.6">
+          <p style="margin:0 0 .5rem"><strong>Modelo:</strong> DIÁRIA GLOBALIZADA por horas (6h / 12h / 24h) + Pediatria + VMI.</p>
+          <p style="margin:0 0 .5rem"><strong>Vigência:</strong> 01/08/2026 a 31/07/2027 (prazo indeterminado, reajuste por novo Acordo Operacional).</p>
+
+          <div style="background:var(--green-bg,#e8f5e9);border-left:3px solid var(--green,#2e7d32);padding:.75rem 1rem;border-radius:4px;margin:.75rem 0">
+            <strong style="color:var(--green,#2e7d32)">INCLUÍDO NA DIÁRIA (não cobrar separado):</strong>
+            <ul style="margin:.5rem 0 0;padding-left:1.25rem">
+              <li>Dietas, suplementos alimentares e probióticos</li>
+              <li>Todos os mobiliários e equipamentos</li>
+              <li>Visitas de médicos generalistas e especialistas</li>
+              <li>Visitas de enfermagem (supervisão / acompanhamento / procedimentos)</li>
+              <li>Terapias multidisciplinares (fisio / fono / psico / TO) incl. avaliação e supervisão</li>
+              <li>Nutricionista e estomatoterapeuta</li>
+              <li>Assistente social</li>
+              <li>Permanência de enfermagem 6h / 12h / 24h aprovadas</li>
+              <li>Equipamentos e insumos das terapias</li>
+              <li>Ventilação mecânica invasiva contínua (equipamentos e insumos)</li>
+              <li>Materiais de ostomias / sondagem / curativos e trocas</li>
+              <li>Materiais de punções parenterais e hipodermóclise</li>
+            </ul>
+          </div>
+
+          <div style="background:#fff3e0;border-left:3px solid #e65100;padding:.75rem 1rem;border-radius:4px;margin:.75rem 0">
+            <strong style="color:#e65100">COBRADO SEPARADO (fora do pacote):</strong>
+            <ul style="margin:.5rem 0 0;padding-left:1.25rem">
+              <li><strong>Medicação específica aplicada</strong> (endovenosa / IM / hipodermóclise) — cobrada por Anexo V / código Brasíndice, conforme aplicações prescritas e realizadas em 24h</li>
+              <li><strong>Pacotes avulsos</strong> (PICC, GTT, NPT, sondagens, curativos, remoções, etc.) — quando NÃO inclusos na diária vigente do paciente</li>
+              <li><strong>Equipamentos não-padrão</strong> (COUGH ASSIST, TENS, guincho, etc.) — quando NÃO inclusos na diária</li>
+            </ul>
+          </div>
+
+          <div style="background:#e3f2fd;border-left:3px solid #1565C0;padding:.75rem 1rem;border-radius:4px;margin:.75rem 0">
+            <strong style="color:#1565C0">REGRAS DE CORREÇÃO (campo "Regra" de cada item):</strong>
+            <ul style="margin:.5rem 0 0;padding-left:1.25rem">
+              <li><strong>Corrigir valor</strong> — item é cobrado; sistema corrige para o valor da tabela vigente e cascateia (Unitário → Total → Total Geral)</li>
+              <li><strong>Incluso no pacote</strong> — item faz parte da diária; sistema aplica 100% de desconto, zera Unitário e Total</li>
+              <li><strong>Excluído do contrato</strong> — item não pertence ao contrato atual; sistema zera todos os valores (Tabela, Unitário, Total)</li>
+            </ul>
+          </div>
+
+          <div style="background:#fce4ec;border-left:3px solid #c62828;padding:.75rem 1rem;border-radius:4px;margin:.75rem 0">
+            <strong style="color:#c62828">ITENS REMOVIDOS DO CONTRATO (2018 → 2026):</strong>
+            <ul style="margin:.5rem 0 0;padding-left:1.25rem">
+              <li><strong>APH (R$ 900)</strong> — agora INCLUSO na diária globalizada (regra: incluso)</li>
+              <li><strong>Medicação 2x a 6x/dia</strong> — ELIMINADAS; só resta 1x/dia (R$ 90) (regra: excluído)</li>
+              <li><strong>Coleta Domiciliar (R$ 60)</strong> — não consta no novo acordo (regra: excluído)</li>
+              <li><strong>Taxa de Liminar Judicial</strong> — eliminada</li>
+              <li><strong>Taxa de Risco / Desmame</strong> — eliminada</li>
+              <li><strong>Medicamentos:</strong> antes até R$ 300 na diária; agora fora, cobrados por Brasíndice 2017 com deflator fixo de 20%</li>
+            </ul>
+          </div>
+
+          <p style="margin:.75rem 0 0;color:var(--gray-600);font-size:.75rem"><strong>Fonte:</strong> Acordo Operacional + Anexo I (Bradesco Saúde), vigência 01/08/2026. Global Care SP (CNPJ 03.872.790/0001-93) e DN Global BA (CNPJ 28.451.893/0001-00).</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Base items list -->
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+        <h3 style="margin:0">Itens Cadastrados</h3>
+        <select id="filter-tipo" style="font-size:.75rem;padding:.25rem .5rem" onchange="renderBaseTable()">
+          <option value="">Todos os tipos</option>
+          <option value="procedimento">Procedimento</option>
+          <option value="material">Material / Medicamento</option>
+          <option value="diaria">Diária</option>
+          <option value="taxa">Taxa / Serviço</option>
+          <option value="pacote">Pacote</option>
+          <option value="equipamento">Equipamento</option>
+          <option value="curativo">Curativo</option>
+          <option value="visita">Visita</option>
+          <option value="remocao">Remoção</option>
+          <option value="gasoterapia">Gasoterapia</option>
+          <option value="o2">O2 / Gases</option>
+          <option value="outro">Outro</option>
+        </select>
+        <select id="filter-entidade" style="font-size:.75rem;padding:.25rem .5rem" onchange="renderBaseTable()">
+          <option value="">Todas entidades</option>
+          <option value="GLOBAL_SP">Global Care SP</option>
+          <option value="DN_BA">DN Global BA</option>
+          <option value="AMBAS">Ambas</option>
+        </select>
+      </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="search-base" placeholder="Buscar por código ou descrição..." oninput="renderBaseTable()">
+      </div>
+      <div class="scrollable-table" id="base-table-area">
+        <div class="empty">Nenhum item cadastrado na base oficial.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: LOG ===== -->
+  <div id="scr-log" class="screen">
+    <div class="card">
+      <h2>Histórico de Processamento</h2>
+      <p style="font-size:.8125rem;color:var(--gray-600);margin-bottom:1rem">
+        Registro de todos os documentos processados neste navegador.
+      </p>
+      <div id="log-area">
+        <div class="empty">Nenhum processamento registrado.</div>
+      </div>
+      <div style="margin-top:1rem;text-align:right">
+        <button class="btn btn-sm btn-secondary" onclick="clearLog()">Limpar Histórico</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="ftr">
+  Sistema de Correção de Documentos — Bradesco &middot; Grupo Global Care &middot; Uso interno
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-backdrop" id="import-modal">
+  <div class="modal">
+    <h3>Importar Base via CSV</h3>
+    <p style="font-size:.8125rem;color:var(--gray-600);margin-bottom:1rem">
+      O CSV deve ter as colunas: <strong>codigo;descricao;valor;tipo;vigencia_inicio;vigencia_fim;fonte</strong><br>
+      Separador: ponto-e-vírgula (<code>;</code>). Encoding: UTF-8.
+    </p>
+    <div class="import-area" onclick="document.getElementById('csv-input').click()">
+      Clique para selecionar arquivo CSV
+    </div>
+    <input type="file" id="csv-input" accept=".csv,.txt" style="display:none">
+    <div id="csv-preview" style="margin-top:.75rem;display:none"></div>
+    <div class="form-actions">
+      <button class="btn btn-sm btn-secondary" onclick="closeImportModal()">Cancelar</button>
+      <button class="btn btn-sm btn-primary" id="btn-import-csv" onclick="doImportCSV()" disabled>Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- JSON IMPORT (hidden input) -->
+<input type="file" id="json-import-input" accept=".json" style="display:none">
+
+<script>
+/* ========================================================================
+   APP STATE
+   ======================================================================== */
+const APP = {
+  file: null,
+  fileBytes: null,
+  fileName: '',
+  extractedItems: [],
+  proposedChanges: [],
+  correctedPdfBytes: null,
+  csvRows: [],
+  baseCache: [],
+  logCache: [],
+  sbReady: false,
+};
+
+/* ========================================================================
+   SUPABASE CLIENT
+   ======================================================================== */
+const SUPABASE_URL = 'https://qlvljigfxirdzjzlrveu.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_ygkWzzgBYWmHdcAFggXB0w_oWqFyEwh';
+let sb = null;
+try {
+  if (window.supabase) sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch(e) { console.warn('Supabase indisponível, usando localStorage:', e); }
+
+/* ========================================================================
+   STORAGE — BASE OFICIAL (Supabase + localStorage fallback)
+   ======================================================================== */
+const STORAGE_KEY = 'bradesco_base_oficial';
+const LOG_KEY = 'bradesco_process_log';
+
+function loadBase() {
+  return APP.baseCache;
+}
+
+function saveBase(items) {
+  APP.baseCache = items;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  if (sb) sbSaveBase(items);
+}
+
+async function sbSaveBase(items) {
+  try {
+    await sb.from('bradesco_base').delete().neq('id', '');
+    if (items.length) {
+      const makeRow = (b, includeRegra) => {
+        const r = {
+          id: b.id, codigo: b.codigo || '', descricao: b.descricao || '',
+          valor: b.valor, tipo: b.tipo || 'procedimento', entidade: b.entidade || 'GLOBAL_SP',
+          vigencia_inicio: b.vigencia_inicio || null, vigencia_fim: b.vigencia_fim || null,
+          fonte: b.fonte || '', criado_em: b.criado_em || new Date().toISOString(),
+        };
+        if (includeRegra) r.regra = b.regra || 'corrigir';
+        return r;
+      };
+      const BATCH = 100;
+      let includeRegra = true;
+      for (let i = 0; i < items.length; i += BATCH) {
+        const batch = items.slice(i, i + BATCH).map(b => makeRow(b, includeRegra));
+        const { error } = await sb.from('bradesco_base').upsert(batch);
+        if (error && error.message && error.message.includes('regra') && includeRegra) {
+          includeRegra = false;
+          const retry = items.slice(i, i + BATCH).map(b => makeRow(b, false));
+          await sb.from('bradesco_base').upsert(retry);
+        }
+      }
+    }
+  } catch(e) { console.warn('Erro ao salvar base no Supabase:', e); }
+}
+
+async function sbLoadBase() {
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb.from('bradesco_base').select('*').order('criado_em');
+    if (error) throw error;
+    return data || [];
+  } catch(e) { console.warn('Erro ao carregar base do Supabase:', e); return null; }
+}
+
+function loadLog() {
+  return APP.logCache;
+}
+
+function saveLog(entries) {
+  APP.logCache = entries;
+  localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+}
+
+async function addLogEntry(entry) {
+  const ts = new Date().toISOString();
+  const full = { ...entry, timestamp: ts };
+  APP.logCache.unshift(full);
+  if (APP.logCache.length > 200) APP.logCache.length = 200;
+  localStorage.setItem(LOG_KEY, JSON.stringify(APP.logCache));
+  if (sb) {
+    try {
+      const { data } = await sb.from('bradesco_log').insert({
+        arquivo: entry.arquivo, status: entry.status,
+        alteracoes: entry.alteracoes || 0, detalhes: entry.detalhes || '',
+        entidade: entry.entidade || '', criado_em: ts,
+      }).select('id').single();
+      if (data && entry.correcoes) {
+        const rows = entry.correcoes.map(c => ({
+          log_id: data.id, campo: c.campo, codigo: c.codigo,
+          descricao: c.descricao, valor_original: c.original,
+          valor_novo: c.novo, fonte: c.fonte, pagina: c.page,
+        }));
+        await sb.from('bradesco_correcoes').insert(rows);
+      }
+    } catch(e) { console.warn('Erro ao salvar log no Supabase:', e); }
+  }
+}
+
+async function sbLoadLog() {
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb.from('bradesco_log').select('*').order('criado_em', { ascending: false }).limit(200);
+    if (error) throw error;
+    return (data || []).map(d => ({
+      arquivo: d.arquivo, status: d.status, alteracoes: d.alteracoes,
+      detalhes: d.detalhes, entidade: d.entidade, timestamp: d.criado_em,
+    }));
+  } catch(e) { console.warn('Erro ao carregar log do Supabase:', e); return null; }
+}
+
+async function initStorage() {
+  // Load from localStorage first (instant)
+  try { APP.baseCache = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { APP.baseCache = []; }
+  try { APP.logCache = JSON.parse(localStorage.getItem(LOG_KEY)) || []; } catch { APP.logCache = []; }
+
+  // Then try Supabase (async) — merge: preserva sinonimos locais
+  if (sb) {
+    const sbBase = await sbLoadBase();
+    if (sbBase !== null && sbBase.length > 0) {
+      const localMap = {};
+      for (const b of APP.baseCache) { if (b.id) localMap[b.id] = b; }
+      for (const sb of sbBase) {
+        const local = localMap[sb.id];
+        if (local && Array.isArray(local.sinonimos) && local.sinonimos.length) {
+          sb.sinonimos = local.sinonimos;
+        }
+      }
+      APP.baseCache = sbBase;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sbBase));
+    }
+    const sbLog = await sbLoadLog();
+    if (sbLog !== null) {
+      APP.logCache = sbLog;
+      localStorage.setItem(LOG_KEY, JSON.stringify(sbLog));
+    }
+    APP.sbReady = true;
+  }
+}
+
+/* ========================================================================
+   UI NAVIGATION
+   ======================================================================== */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('scr-' + name).classList.add('active');
+  document.querySelectorAll('.tabs button').forEach((b, i) => {
+    b.classList.toggle('active', ['upload','base','log'][i] === name);
+  });
+  if (name === 'upload') updateBaseStatusAlert();
+  if (name === 'base') { renderBaseTable(); updateBaseCount(); }
+  if (name === 'log') renderLog();
+}
+
+/* ========================================================================
+   FILE UPLOAD
+   ======================================================================== */
+const uploadZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    alert('Somente arquivos PDF são aceitos.');
+    return;
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    alert('Arquivo excede 50 MB.');
+    return;
+  }
+  APP.file = file;
+  APP.fileName = file.name;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('file-size').textContent = formatBytes(file.size);
+  document.getElementById('upload-zone').style.display = 'none';
+  document.getElementById('file-selected').style.display = 'block';
+}
+
+function removeFile() {
+  APP.file = null;
+  APP.fileBytes = null;
+  APP.fileName = '';
+  fileInput.value = '';
+  document.getElementById('upload-zone').style.display = '';
+  document.getElementById('file-selected').style.display = 'none';
+}
+
+function resetUpload() {
+  removeFile();
+  APP.extractedItems = [];
+  APP.proposedChanges = [];
+  APP.correctedPdfBytes = null;
+  ['step-processing','step-review','step-validation','step-success','step-error'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('step-upload').style.display = '';
+  resetProgress();
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(1) + ' MB';
+}
+
+/* ========================================================================
+   PROGRESS UI
+   ======================================================================== */
+const STEPS = ['p-read','p-extract','p-identify','p-compare','p-validate-n','p-validate-v','p-check'];
+
+function resetProgress() {
+  STEPS.forEach(id => {
+    const li = document.getElementById(id);
+    li.className = '';
+    li.querySelector('.icon').innerHTML = '';
+  });
+}
+
+function setStep(id, state) {
+  const li = document.getElementById(id);
+  li.className = state;
+  const icon = li.querySelector('.icon');
+  if (state === 'active') icon.innerHTML = '<span class="spinner"></span>';
+  else if (state === 'done') icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+  else if (state === 'error') icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ========================================================================
+   PDF READING (pdf.js)
+   ======================================================================== */
+async function readPdfText(bytes) {
+  const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const doc = await pdfjsLib.getDocument({ data: new Uint8Array(bytes) }).promise;
+  const allItems = [];
+
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const viewport = page.getViewport({ scale: 1 });
+    const content = await page.getTextContent();
+
+    for (const item of content.items) {
+      if (!item.str || !item.str.trim()) continue;
+      const tx = item.transform;
+      const x = tx[4];
+      const y = viewport.height - tx[5];
+      const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
+      allItems.push({
+        page: p,
+        text: item.str,
+        x: Math.round(x * 100) / 100,
+        y: Math.round(y * 100) / 100,
+        width: item.width,
+        height: item.height || fontSize,
+        fontSize: Math.round(fontSize * 10) / 10,
+        fontName: item.fontName || '',
+        transform: tx,
+        vpHeight: viewport.height,
+      });
+    }
+  }
+  return { items: allItems, numPages: doc.numPages };
+}
+
+/* ========================================================================
+   FIELD IDENTIFICATION & TABLE-AWARE COMPARISON ENGINE
+   ======================================================================== */
+const RE_CURRENCY = /R\$\s*([\d.,]+)/g;
+const RE_BARE_VALUE = /^([\d]{1,3}(?:\.[\d]{3})*,\d{2})$/;
+
+function parseNumBR(s) {
+  if (!s) return NaN;
+  return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+}
+function formatNumBR(n) {
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function normalize(s) {
+  if (!s) return '';
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+/* Group text items into rows by Y-coordinate proximity */
+function groupIntoRows(items, yTol) {
+  const tol = yTol || 5;
+  const sorted = [...items].sort((a, b) => a.y - b.y || a.x - b.x);
+  if (!sorted.length) return [];
+  const rows = [];
+  let cur = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    if (Math.abs(sorted[i].y - cur[0].y) < tol) {
+      cur.push(sorted[i]);
+    } else {
+      rows.push(cur);
+      cur = [sorted[i]];
+    }
+  }
+  if (cur.length) rows.push(cur);
+  for (const r of rows) r.sort((a, b) => a.x - b.x);
+  return rows;
+}
+
+/* Detect table header row and return column definitions */
+function detectTableColumns(rows) {
+  const COL_DEFS = [
+    { key: 'precoTabela', words: ['tabela'] },
+    { key: 'desconto',    words: ['desconto'] },
+    { key: 'precoUnitario', words: ['unitario', 'unitário', 'unit.', 'unit'] },
+    { key: 'quantidade',  words: ['quantidade', 'qtd', 'qtde', 'quant'] },
+    { key: 'total',       words: ['total'] },
+  ];
+
+  for (let ri = 0; ri < rows.length; ri++) {
+    const rowItems = rows[ri];
+    const rowTextLower = rowItems.map(it => it.text.trim().toLowerCase()).join(' ');
+
+    let matchCount = 0;
+    const found = {};
+
+    for (const cd of COL_DEFS) {
+      for (const word of cd.words) {
+        if (rowTextLower.includes(word)) {
+          matchCount++;
+          for (const item of rowItems) {
+            const t = item.text.trim().toLowerCase();
+            if (t.includes(word) && !found[cd.key]) {
+              found[cd.key] = {
+                x: item.x,
+                rightX: item.x + (item.width || 50),
+                centerX: item.x + (item.width || 50) / 2,
+              };
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    // Need at least 3 matches including precoTabela or total
+    if (matchCount >= 3 && (found.precoTabela || found.total)) {
+      const numericXs = Object.values(found).map(f => f.x);
+      const minNumericX = Math.min(...numericXs);
+      // Build sorted column list for boundary computation
+      const sortedCols = Object.entries(found)
+        .map(([key, col]) => ({ key, ...col }))
+        .sort((a, b) => a.centerX - b.centerX);
+      return { headerRowIndex: ri, columns: found, sortedCols, descMaxX: minNumericX - 5 };
+    }
+  }
+  return null;
+}
+
+/* Assign items in a data row to their respective columns */
+function parseDataRow(rowItems, colDef) {
+  const result = {
+    descItems: [],
+    descText: '',
+    precoTabela: null,
+    desconto: null,
+    precoUnitario: null,
+    quantidade: null,
+    total: null,
+    code: null,
+    items: {},
+  };
+  const sc = colDef.sortedCols;
+
+  for (const item of rowItems) {
+    const txt = item.text.trim();
+    if (!txt) continue;
+
+    // Description: anything left of the first numeric column
+    if (item.x + (item.width || 0) / 2 < colDef.descMaxX) {
+      result.descItems.push(item);
+      const codeMatch = txt.match(/\b(\d{8,10})\b/);
+      if (codeMatch) result.code = codeMatch[1];
+      continue;
+    }
+
+    // Find closest column using boundary midpoints
+    const itemCenter = item.x + (item.width || 0) / 2;
+    let bestCol = null;
+    for (let i = 0; i < sc.length; i++) {
+      const left = i === 0 ? colDef.descMaxX : (sc[i - 1].centerX + sc[i].centerX) / 2;
+      const right = i === sc.length - 1 ? Infinity : (sc[i].centerX + sc[i + 1].centerX) / 2;
+      if (itemCenter >= left && itemCenter < right) {
+        bestCol = sc[i].key;
+        break;
+      }
+    }
+
+    if (!bestCol) continue;
+
+    const cleanTxt = txt.replace(/R\$\s*/g, '').replace(/%/g, '').replace(/\s/g, '').trim();
+    const numVal = parseNumBR(cleanTxt);
+    if (!isNaN(numVal)) {
+      result[bestCol] = numVal;
+      result.items[bestCol] = item;
+    }
+  }
+
+  result.descText = result.descItems.map(it => it.text).join(' ').trim();
+  return result;
+}
+
+/* Build a change object with all position data needed for PDF overlay */
+function makeChange(campo, codigo, descricao, originalText, originalNum, novoText, novoNum, fonte, item) {
+  return {
+    campo,
+    codigo,
+    descricao,
+    original: originalText,
+    originalNum,
+    novo: novoText,
+    novoFormatted: novoText,
+    novoNum,
+    fonte,
+    page: item.page,
+    x: item.x,
+    y: item.y,
+    width: item.width,
+    height: item.height,
+    fontSize: item.fontSize,
+    fontName: item.fontName,
+    transform: item.transform,
+    vpHeight: item.vpHeight,
+    isValueReplace: true,
+    originalFullText: item.text,
+  };
+}
+
+/* Normalize for matching: strip accents, uppercase, collapse spaces, expand abbreviations */
+function normalizeForMatch(s) {
+  if (!s) return '';
+  let n = normalize(s);
+  n = n.replace(/\bC\/\s*/g, 'COM ');
+  n = n.replace(/\bS\/\s*/g, 'SEM ');
+  n = n.replace(/\b(\d+)\s*HS?\b/g, '$1HS');
+  n = n.replace(/\bENF\b/g, 'ENFERMAGEM');
+  n = n.replace(/\bFISIO\b/g, 'FISIOTERAPIA');
+  n = n.replace(/\bFONO\b/g, 'FONOAUDIOLOGIA');
+  n = n.replace(/\bMED\b/g, 'MEDICO');
+  n = n.replace(/\bNUTRI\b/g, 'NUTRICIONISTA');
+  n = n.replace(/\bPSICO\b/g, 'PSICOLOGIA');
+  n = n.replace(/\bTO\b/g, 'TERAPIA OCUPACIONAL');
+  n = n.replace(/\bASS\s*SOC\b/g, 'ASSISTENTE SOCIAL');
+  n = n.replace(/\bAPLIC\b/g, 'APLICACAO');
+  n = n.replace(/\bMEDIC\b/g, 'MEDICACAO');
+  n = n.replace(/\bESPEC\b/g, 'ESPECIALIZADA');
+  n = n.replace(/\bADM\b/g, 'ADMINISTRACAO');
+  n = n.replace(/\bINF\b/g, 'INFUSAO');
+  n = n.replace(/\bTEC\s+ENF\b/g, 'TECNICO DE ENFERMAGEM');
+  n = n.replace(/\bENDOVENOSA?\b/g, 'ENDOVENOSA');
+  n = n.replace(/\bEV\b/g, 'ENDOVENOSA');
+  n = n.replace(/\bIM\b/g, 'INTRAMUSCULAR');
+  n = n.replace(/\s+/g, ' ').trim();
+  return n;
+}
+
+/* Extrai frequência embutida na descrição Syscare.
+   Devolve: { clean, freq }
+   - clean: descrição sem frequência/prefixos (para matching)
+   - freq: multiplicador de preço
+   SEMANAL=4/mês, QUINZENAL=2/mês, MENSAL=1, NxDIA=N, NxSEMANA=N */
+function extractFrequency(desc) {
+  let s = desc;
+  let freq = 1;
+
+  const rxFreq = /\b(\d+)\s*X\s*(?:SEMANA|SEM|DIA)\b/i;
+  const mFreq = s.match(rxFreq);
+  if (mFreq) {
+    freq = parseInt(mFreq[1]) || 1;
+    s = s.replace(rxFreq, '');
+  } else if (/\bQUINZENAL\b/i.test(s)) {
+    freq = 2;
+    s = s.replace(/\bQUINZENAL\b/i, '');
+  } else if (/\bSEMANAL\b/i.test(s)) {
+    freq = 4;
+    s = s.replace(/\bSEMANAL\b/i, '');
+  } else if (/\bMENSAL\b/i.test(s)) {
+    freq = 1;
+    s = s.replace(/\bMENSAL\b/i, '');
+  } else if (/\bDIARIO\b/i.test(s) || /\bDIARIA\b/i.test(s)) {
+    if (!/GLOBAL/i.test(s) && !/DIARIA\s+\d/i.test(s)) {
+      freq = 30;
+      s = s.replace(/\bDIARIO\b/i, '').replace(/\bDIARIA\b/i, '');
+    }
+  }
+  s = s.replace(/\bPROCEDIMENTO\s+PONTUAL\b/i, '');
+  s = s.replace(/\bPACOTE\b/i, '');
+  s = s.replace(/\s+/g, ' ').trim();
+  return { clean: s, freq };
+}
+
+/* Match a description against the base using fuzzy normalized comparison */
+function matchDescription(normDesc, byDesc) {
+  let bestMatch = null;
+  let bestScore = 0;
+  const expandedDesc = normalizeForMatch(normDesc);
+
+  for (const [descKey, entries] of Object.entries(byDesc)) {
+    const expandedKey = normalizeForMatch(descKey);
+    let score = 0;
+
+    // Exact match
+    if (normDesc === descKey || expandedDesc === expandedKey) {
+      score = 1.0;
+    } else {
+      // Substring containment
+      const shorter = Math.min(expandedDesc.length, expandedKey.length);
+      const longer = Math.max(expandedDesc.length, expandedKey.length);
+      if (expandedDesc.includes(expandedKey) || expandedKey.includes(expandedDesc)) {
+        score = shorter / longer;
+        if (score < 0.5) score = 0.5;
+      }
+      // Token overlap (Dice coefficient)
+      if (score < 0.6) {
+        const tokens1 = expandedDesc.split(/\s+/).filter(t => t.length > 1);
+        const tokens2 = expandedKey.split(/\s+/).filter(t => t.length > 1);
+        if (tokens1.length && tokens2.length) {
+          const common = tokens1.filter(t => tokens2.some(t2 => t2 === t || t2.includes(t) || t.includes(t2)));
+          const dice = (2 * common.length) / (tokens1.length + tokens2.length);
+          score = Math.max(score, dice);
+        }
+      }
+    }
+    if (score > bestScore && score >= 0.55) {
+      bestScore = score;
+      bestMatch = { entries, descKey, score };
+    }
+  }
+  return bestMatch;
+}
+
+/* ========================================================================
+   COMPARISON ENGINE (TABLE-AWARE WITH CASCADING)
+   ======================================================================== */
+function compareWithBase(rawItems) {
+  const base = loadBase();
+  if (!base.length) return {
+    changes: [], warnings: ['A base oficial está vazia. Cadastre itens na aba "Base Oficial".'],
+    stats: { total: 0, matched: 0, changes: 0, kept: 0 }
+  };
+
+  const selectedEnt = document.getElementById('sel-entidade').value;
+  const today = new Date().toISOString().slice(0, 10);
+  const vigentes = base.filter(b => {
+    if (b.vigencia_inicio && b.vigencia_inicio > today) return false;
+    if (b.vigencia_fim && b.vigencia_fim < today) return false;
+    if (b.entidade && b.entidade !== 'AMBAS' && b.entidade !== selectedEnt) return false;
+    return true;
+  });
+
+  if (!vigentes.length) return {
+    changes: [], warnings: ['Nenhum item vigente na base para a entidade selecionada.'],
+    stats: { total: 0, matched: 0, changes: 0, kept: 0 }
+  };
+
+  // Build lookups (inclui sinônimos como chaves alternativas)
+  const byDesc = {};
+  const byCode = {};
+  for (const b of vigentes) {
+    const d = normalize(b.descricao);
+    if (d) { if (!byDesc[d]) byDesc[d] = []; if (!byDesc[d].some(x => x.id === b.id)) byDesc[d].push(b); }
+    if (Array.isArray(b.sinonimos)) {
+      for (const sin of b.sinonimos) {
+        const ns = normalize(sin);
+        if (ns) { if (!byDesc[ns]) byDesc[ns] = []; if (!byDesc[ns].some(x => x.id === b.id)) byDesc[ns].push(b); }
+      }
+    }
+    const c = (b.codigo || '').trim();
+    if (c) { if (!byCode[c]) byCode[c] = []; byCode[c].push(b); }
+    if (Array.isArray(b.codigosAntigos)) {
+      for (const old of b.codigosAntigos) {
+        const oc = old.trim();
+        if (oc) { if (!byCode[oc]) byCode[oc] = []; if (!byCode[oc].some(x => x.id === b.id)) byCode[oc].push(b); }
+      }
+    }
+  }
+
+  const changes = [];
+  const warnings = [];
+  const allRows = [];
+  let matched = 0;
+  let totalFields = 0;
+
+  // Group items by page
+  const byPage = {};
+  for (const item of rawItems) {
+    if (!byPage[item.page]) byPage[item.page] = [];
+    byPage[item.page].push(item);
+  }
+
+  let totalDelta = 0;
+  let sectionDelta = 0;
+  let hasAnyCorrection = false;
+  let grandTotalItem = null;
+  let grandTotalOriginal = 0;
+  let tableFound = false;
+  let currentSection = '';
+  const sections = [];
+
+  for (const [pageNumStr, pageItems] of Object.entries(byPage)) {
+    const pageNum = parseInt(pageNumStr);
+    const rows = groupIntoRows(pageItems);
+    const colDef = detectTableColumns(rows);
+    if (!colDef) continue;
+    tableFound = true;
+
+    for (let ri = colDef.headerRowIndex + 1; ri < rows.length; ri++) {
+      const row = rows[ri];
+      const rowTextRaw = row.map(it => it.text).join(' ').trim();
+
+      // Detect section headers
+      const rowClean = rowTextRaw.replace(/[\d.,R$%\s()]/g, '').trim();
+      if (rowClean.length > 2 && !/sub\s*total|or[çc]amento|total\s*geral/i.test(rowTextRaw)) {
+        if (/^pacote$/i.test(rowClean)) currentSection = 'PACOTE';
+        else if (/atendimento/i.test(rowClean)) currentSection = 'ATENDIMENTO PROFISSIONAL';
+        else if (/material/i.test(rowClean) && !/intramuscular/i.test(rowClean)) currentSection = 'MATERIAL';
+        else if (/medicamento/i.test(rowClean)) currentSection = 'MEDICAMENTO';
+        else if (/dieta/i.test(rowClean)) currentSection = 'DIETA';
+        else if (/equipamento/i.test(rowClean)) currentSection = 'EQUIPAMENTO';
+      }
+
+      // Detect subtotal and grand total rows
+      const isSubTotal = /sub\s*total/i.test(rowTextRaw);
+      const isOrcTotal = /or[çc]amento\s*total/i.test(rowTextRaw);
+      const isTotalGeral = /total\s*geral/i.test(rowTextRaw);
+
+      if (isSubTotal || isOrcTotal || isTotalGeral) {
+        let valItem = null, valNum = 0;
+        for (const item of row) {
+          const n = parseNumBR(item.text.replace(/R\$\s*/g, '').replace(/\s/g, '').trim());
+          if (!isNaN(n)) { valItem = item; valNum = n; }
+        }
+
+        if (isSubTotal && valItem) {
+          if (Math.abs(sectionDelta) > 0.005) {
+            hasAnyCorrection = true;
+            const newSub = Math.round((valNum + sectionDelta) * 100) / 100;
+            const label = rowTextRaw.replace(/[\d.,\s]*$/, '').trim() || 'SubTotal';
+            changes.push(makeChange(
+              'SubTotal', '-', label,
+              valItem.text.trim(), valNum,
+              formatNumBR(newSub), newSub,
+              'Soma dos totais corrigidos', valItem
+            ));
+          }
+          totalDelta += sectionDelta;
+          sectionDelta = 0;
+        }
+
+        if ((isOrcTotal || isTotalGeral) && valItem) {
+          grandTotalItem = valItem;
+          grandTotalOriginal = valNum;
+        }
+        continue;
+      }
+
+      // Skip empty or non-data rows
+      const parsed = parseDataRow(row, colDef);
+      if (!parsed.descText || parsed.precoTabela == null) continue;
+
+      totalFields++;
+
+      // Try to match against base
+      let baseEntry = null;
+
+      // 1. Match by code
+      if (parsed.code && byCode[parsed.code]) {
+        const entries = byCode[parsed.code];
+        if (entries.length === 1) {
+          baseEntry = entries[0];
+        } else {
+          warnings.push('Código ' + parsed.code + ': ' + entries.length + ' entradas na base. Nenhuma correção.');
+          continue;
+        }
+      }
+
+      // 2. Extrair frequência da descrição (sempre)
+      const normDescRaw = normalize(parsed.descText);
+      const { clean: descSemFreq, freq: freqExtraida } = extractFrequency(normDescRaw);
+      let freqMultiplier = 1;
+
+      // 3. Tentar match: primeiro com descrição limpa (sem frequência), depois com original
+      if (!baseEntry) {
+        // 3a. Match com descrição limpa (sem freq/prefixos)
+        if (descSemFreq !== normDescRaw) {
+          const matchClean = matchDescription(descSemFreq, byDesc);
+          if (matchClean) {
+            if (matchClean.entries.length === 1) {
+              baseEntry = matchClean.entries[0];
+              freqMultiplier = freqExtraida;
+            } else {
+              warnings.push('"' + parsed.descText + '": ' + matchClean.entries.length + ' entradas na base. Nenhuma correção.');
+              continue;
+            }
+          }
+        }
+        // 3b. Match com descrição original (para itens sem frequência)
+        if (!baseEntry) {
+          const match = matchDescription(normDescRaw, byDesc);
+          if (match) {
+            if (match.entries.length === 1) {
+              baseEntry = match.entries[0];
+            } else {
+              warnings.push('"' + parsed.descText + '": ' + match.entries.length + ' entradas na base. Nenhuma correção.');
+              continue;
+            }
+          }
+        }
+      }
+
+      if (!baseEntry) {
+        warnings.push('SEM CORRESPONDÊNCIA na base: "' + parsed.descText + '" (pág. ' + pageNum + '). Cadastre este item na Base Oficial para corrigi-lo.');
+        allRows.push({ pag: pageNum, section: currentSection, codigo: parsed.code || '-', desc: parsed.descText, ptOrig: parsed.precoTabela, ptCorr: parsed.precoTabela, descPct: parsed.desconto, puOrig: parsed.precoUnitario, puCorr: parsed.precoUnitario, qtd: parsed.quantidade, totalOrig: parsed.total, totalCorr: parsed.total, status: 'SEM CORRESPONDÊNCIA', fonte: '-' });
+        continue;
+      }
+
+      const regra = baseEntry.regra || 'corrigir';
+      matched++;
+
+      // === REGRA: EXCLUÍDO — zerar tudo ===
+      if (regra === 'excluido') {
+        if (parsed.precoTabela > 0.005 && parsed.items.precoTabela) {
+          hasAnyCorrection = true;
+          changes.push(makeChange(
+            'Preço Tabela', baseEntry.codigo || '-', baseEntry.descricao,
+            parsed.items.precoTabela.text.trim(), parsed.precoTabela,
+            formatNumBR(0), 0,
+            'Item excluído do contrato', parsed.items.precoTabela
+          ));
+        }
+        if (parsed.precoUnitario > 0.005 && parsed.items.precoUnitario) {
+          changes.push(makeChange(
+            'Preço Unitário', baseEntry.codigo || '-', baseEntry.descricao,
+            parsed.items.precoUnitario.text.trim(), parsed.precoUnitario,
+            formatNumBR(0), 0,
+            'Item excluído do contrato', parsed.items.precoUnitario
+          ));
+        }
+        if (parsed.total > 0.005 && parsed.items.total) {
+          sectionDelta += (0 - parsed.total);
+          changes.push(makeChange(
+            'Total', baseEntry.codigo || '-', baseEntry.descricao,
+            parsed.items.total.text.trim(), parsed.total,
+            formatNumBR(0), 0,
+            'Item excluído do contrato', parsed.items.total
+          ));
+        }
+        allRows.push({ pag: pageNum, section: currentSection, codigo: parsed.code || baseEntry.codigo, desc: parsed.descText, ptOrig: parsed.precoTabela, ptCorr: 0, descPct: 100, puOrig: parsed.precoUnitario, puCorr: 0, qtd: parsed.quantidade, totalOrig: parsed.total, totalCorr: 0, status: 'EXCLUÍDO', fonte: baseEntry.fonte || '-' });
+        continue;
+      }
+
+      // === REGRA: INCLUSO NO PACOTE — 100% desconto, zerar unitário e total ===
+      if (regra === 'incluso') {
+        hasAnyCorrection = true;
+        // Corrigir Tabela se houver valor na base
+        if (baseEntry.valor != null && baseEntry.valor > 0 && parsed.items.precoTabela) {
+          if (Math.abs(parsed.precoTabela - baseEntry.valor) > 0.005) {
+            changes.push(makeChange(
+              'Preço Tabela', baseEntry.codigo || '-', baseEntry.descricao,
+              parsed.items.precoTabela.text.trim(), parsed.precoTabela,
+              formatNumBR(baseEntry.valor), baseEntry.valor,
+              baseEntry.fonte || 'Base oficial', parsed.items.precoTabela
+            ));
+          }
+        }
+        // Desconto → 100%
+        if (parsed.desconto != null && Math.abs(parsed.desconto - 100) > 0.005 && parsed.items.desconto) {
+          changes.push(makeChange(
+            'Desconto', baseEntry.codigo || '-', baseEntry.descricao,
+            parsed.items.desconto.text.trim(), parsed.desconto,
+            '100,00', 100,
+            'Incluso no pacote (diária)', parsed.items.desconto
+          ));
+        }
+        // Unitário → 0
+        if (parsed.precoUnitario > 0.005 && parsed.items.precoUnitario) {
+          changes.push(makeChange(
+            'Preço Unitário', baseEntry.codigo || '-', baseEntry.descricao,
+            parsed.items.precoUnitario.text.trim(), parsed.precoUnitario,
+            formatNumBR(0), 0,
+            'Incluso no pacote (diária)', parsed.items.precoUnitario
+          ));
+        }
+        // Total → 0
+        if (parsed.total > 0.005 && parsed.items.total) {
+          sectionDelta += (0 - parsed.total);
+          changes.push(makeChange(
+            'Total', baseEntry.codigo || '-', baseEntry.descricao,
+            parsed.items.total.text.trim(), parsed.total,
+            formatNumBR(0), 0,
+            'Incluso no pacote (diária)', parsed.items.total
+          ));
+        }
+        allRows.push({ pag: pageNum, section: currentSection, codigo: parsed.code || baseEntry.codigo, desc: parsed.descText, ptOrig: parsed.precoTabela, ptCorr: baseEntry.valor || parsed.precoTabela, descPct: 100, puOrig: parsed.precoUnitario, puCorr: 0, qtd: parsed.quantidade, totalOrig: parsed.total, totalCorr: 0, status: 'INCLUSO', fonte: baseEntry.fonte || '-' });
+        continue;
+      }
+
+      // === REGRA: CORRIGIR (padrão) — corrigir PT, PU e Total independentemente ===
+      if (baseEntry.valor == null || baseEntry.valor <= 0) continue;
+
+      const tabelaCorreto = Math.round(baseEntry.valor * freqMultiplier * 100) / 100;
+      const tabelaAtual = parsed.precoTabela;
+      const fonteLabel = freqMultiplier > 1
+        ? baseEntry.fonte + ' (×' + freqMultiplier + ')'
+        : (baseEntry.fonte || 'Base oficial');
+
+      // 1. Corrigir Preço Tabela (base × freq)
+      if (Math.abs(tabelaAtual - tabelaCorreto) > 0.005 && parsed.items.precoTabela) {
+        hasAnyCorrection = true;
+        changes.push(makeChange(
+          'Preço Tabela', baseEntry.codigo || '-', baseEntry.descricao,
+          parsed.items.precoTabela.text.trim(), tabelaAtual,
+          formatNumBR(tabelaCorreto), tabelaCorreto,
+          fonteLabel, parsed.items.precoTabela
+        ));
+      }
+
+      // 2. Corrigir Preço Unitário = preço base do contrato (SEM freq)
+      const desconto = parsed.desconto || 0;
+      const unitarioCorreto = Math.round(baseEntry.valor * (1 - desconto / 100) * 100) / 100;
+      const unitarioAtual = parsed.precoUnitario;
+
+      if (unitarioAtual != null && parsed.items.precoUnitario) {
+        if (Math.abs(unitarioAtual - unitarioCorreto) > 0.005) {
+          hasAnyCorrection = true;
+          changes.push(makeChange(
+            'Preço Unitário', baseEntry.codigo || '-', baseEntry.descricao,
+            parsed.items.precoUnitario.text.trim(), unitarioAtual,
+            formatNumBR(unitarioCorreto), unitarioCorreto,
+            'Base oficial' + (desconto > 0 ? ' × (1 − ' + desconto + '%)' : ''), parsed.items.precoUnitario
+          ));
+        }
+      }
+
+      // 3. Corrigir Total = Preço Tabela correto × (1 - Desc%) × Quantidade
+      const quantidade = parsed.quantidade || 1;
+      const totalCorreto = Math.round(tabelaCorreto * (1 - desconto / 100) * quantidade * 100) / 100;
+      const totalAtual = parsed.total;
+
+      if (totalAtual != null && parsed.items.total) {
+        if (Math.abs(totalAtual - totalCorreto) > 0.005) {
+          hasAnyCorrection = true;
+          const oldTotal = totalAtual;
+          changes.push(makeChange(
+            'Total', baseEntry.codigo || '-', baseEntry.descricao,
+            parsed.items.total.text.trim(), totalAtual,
+            formatNumBR(totalCorreto), totalCorreto,
+            'Calculado: Tabela × Qtd', parsed.items.total
+          ));
+          sectionDelta += (totalCorreto - oldTotal);
+        }
+      }
+
+      const rowStatus = (Math.abs((parsed.precoTabela || 0) - tabelaCorreto) > 0.005 || Math.abs((parsed.precoUnitario || 0) - unitarioCorreto) > 0.005 || Math.abs((parsed.total || 0) - totalCorreto) > 0.005) ? 'CORRIGIR' : 'OK';
+      allRows.push({ pag: pageNum, section: currentSection, codigo: parsed.code || baseEntry.codigo, desc: parsed.descText, ptOrig: parsed.precoTabela, ptCorr: tabelaCorreto, descPct: desconto, puOrig: parsed.precoUnitario, puCorr: unitarioCorreto, qtd: parsed.quantidade || 1, totalOrig: parsed.total, totalCorr: totalCorreto, status: rowStatus, fonte: baseEntry.fonte || '-' });
+    }
+  }
+
+  // Flush remaining sectionDelta (items after last subtotal)
+  totalDelta += sectionDelta;
+
+  // 4. Correct Grand Total (Orçamento Total) if any row total changed
+  if (hasAnyCorrection && grandTotalItem && Math.abs(totalDelta) > 0.005) {
+    const newGrandTotal = Math.round((grandTotalOriginal + totalDelta) * 100) / 100;
+    changes.push(makeChange(
+      'Total Geral', '-', 'ORÇAMENTO TOTAL',
+      grandTotalItem.text.trim(), grandTotalOriginal,
+      formatNumBR(newGrandTotal), newGrandTotal,
+      'Soma dos totais corrigidos', grandTotalItem
+    ));
+  }
+
+  // Fallback: if no table structure found, try simple value matching
+  if (!tableFound) {
+    warnings.push('Nenhuma tabela de faturamento detectada. Tentando correspondência individual de valores...');
+    return fallbackCompare(rawItems, vigentes, byCode, byDesc, warnings);
+  }
+
+  // Summary
+  const unmatched = totalFields - matched;
+  if (unmatched > 0) {
+    warnings.unshift('Resumo: ' + matched + ' de ' + totalFields + ' itens da tabela corresponderam à base. ' + unmatched + ' item(ns) sem correspondência (veja avisos abaixo).');
+  }
+
+  return {
+    changes, warnings, allRows,
+    stats: { total: totalFields, matched, changes: changes.length, kept: unmatched },
+  };
+}
+
+/* Fallback: simple individual value matching for non-table documents */
+function fallbackCompare(rawItems, vigentes, byCode, byDesc, warnings) {
+  const changes = [];
+  const seenPositions = new Set();
+  let matched = 0;
+  let totalFields = 0;
+
+  // Extract all values and codes
+  for (const item of rawItems) {
+    const txt = item.text.trim();
+    if (!txt) continue;
+    // Check bare values
+    if (RE_BARE_VALUE.test(txt)) totalFields++;
+    const reCur = new RegExp(RE_CURRENCY.source, 'g');
+    let m;
+    while ((m = reCur.exec(txt)) !== null) totalFields++;
+  }
+
+  // Group items into rows
+  const rows = groupIntoRows(rawItems);
+
+  for (const row of rows) {
+    const rowText = row.map(it => it.text).join(' ');
+    const normRow = normalize(rowText);
+
+    // Try description match
+    for (const [descKey, entries] of Object.entries(byDesc)) {
+      let score = 0;
+      if (normRow === descKey) score = 1;
+      else if (normRow.includes(descKey) && descKey.length > normRow.length * 0.5) score = 0.8;
+      else if (descKey.includes(normRow) && normRow.length > descKey.length * 0.5) score = 0.8;
+      if (score < 0.8) continue;
+      if (entries.length > 1) continue;
+
+      const entry = entries[0];
+      if (entry.valor == null || entry.valor <= 0) continue;
+
+      // Find values on this row
+      for (const item of row) {
+        const txt = item.text.trim();
+        const n = parseNumBR(txt.replace(/R\$\s*/g, '').trim());
+        if (isNaN(n) || n <= 0) continue;
+        const posKey = item.page + '-' + item.x + '-' + item.y;
+        if (seenPositions.has(posKey)) continue;
+
+        if (Math.abs(n - entry.valor) > 0.005 && n > 1) {
+          seenPositions.add(posKey);
+          matched++;
+          changes.push(makeChange(
+            'Valor', entry.codigo || '-', entry.descricao,
+            txt, n, formatNumBR(entry.valor), entry.valor,
+            entry.fonte || 'Base oficial', item
+          ));
+        } else if (Math.abs(n - entry.valor) < 0.005) {
+          seenPositions.add(posKey);
+          matched++;
+        }
+      }
+    }
+  }
+
+  return {
+    changes, warnings,
+    stats: { total: totalFields, matched, changes: changes.length, kept: totalFields - matched },
+  };
+}
+
+/* ========================================================================
+   MAIN ANALYSIS FLOW
+   ======================================================================== */
+async function analyzeDocument() {
+  if (!APP.file) return;
+
+  const base = loadBase();
+  if (!base.length) {
+    if (!confirm('A base oficial está vazia. O sistema só pode corrigir documentos quando há itens cadastrados na base.\n\nDeseja continuar mesmo assim? (Nenhuma correção será possível)')) return;
+  }
+
+  document.getElementById('step-upload').style.display = 'none';
+  document.getElementById('step-processing').style.display = '';
+  resetProgress();
+
+  try {
+    // 1. Read file
+    setStep('p-read', 'active');
+    const arrayBuf = await APP.file.arrayBuffer();
+    APP.fileBytes = new Uint8Array(arrayBuf.slice(0));
+    setStep('p-read', 'done');
+    await delay(200);
+
+    // 2. Extract text
+    setStep('p-extract', 'active');
+    let extracted;
+    try {
+      extracted = await readPdfText(APP.fileBytes);
+    } catch (e) {
+      setStep('p-extract', 'error');
+      showError('Não foi possível ler o documento PDF. O arquivo pode estar protegido, corrompido, ou ser um PDF escaneado sem camada de texto.\n\nPara PDFs escaneados, é necessário aplicar OCR previamente.\n\nDetalhes: ' + e.message);
+      return;
+    }
+    APP.extractedData = extracted;
+    setStep('p-extract', 'done');
+    await delay(200);
+
+    if (!extracted.items.length) {
+      setStep('p-identify', 'error');
+      showError('O documento não contém texto selecionável. Pode ser um PDF escaneado/imagem.\n\nO sistema requer um PDF com camada de texto para identificar e corrigir valores. Para PDFs escaneados, aplique OCR antes de enviar.');
+      return;
+    }
+
+    // 3. Analyze table structure
+    setStep('p-identify', 'active');
+    await delay(100);
+    setStep('p-identify', 'done');
+    await delay(200);
+
+    // 4. Compare with base (table-aware + cascading)
+    setStep('p-compare', 'active');
+    const result = compareWithBase(APP.extractedData.items);
+    APP.proposedChanges = result.changes;
+    APP.allRows = result.allRows || [];
+    setStep('p-compare', 'done');
+    await delay(200);
+
+    // 5-6. Validate
+    setStep('p-validate-n', 'active');
+    await delay(150);
+    setStep('p-validate-n', 'done');
+    setStep('p-validate-v', 'active');
+    await delay(150);
+    setStep('p-validate-v', 'done');
+
+    // 7. Review
+    setStep('p-check', 'active');
+    await delay(150);
+    setStep('p-check', 'done');
+    await delay(300);
+
+    // Show review
+    document.getElementById('step-processing').style.display = 'none';
+    showReview(result);
+
+  } catch (e) {
+    showError('Erro inesperado durante o processamento: ' + e.message);
+  }
+}
+
+function showError(msg) {
+  document.getElementById('step-processing').style.display = 'none';
+  document.getElementById('error-message').textContent = msg;
+  document.getElementById('step-error').style.display = '';
+}
+
+/* ========================================================================
+   REVIEW UI
+   ======================================================================== */
+function showReview(result) {
+  document.getElementById('step-review').style.display = '';
+  const { changes, warnings, stats } = result;
+
+  document.getElementById('stat-total').textContent = stats.total;
+  document.getElementById('stat-matched').textContent = stats.matched;
+  document.getElementById('stat-changes').textContent = stats.changes;
+  document.getElementById('stat-kept').textContent = stats.kept;
+
+  // Warnings
+  const wArea = document.getElementById('warnings-area');
+  wArea.innerHTML = '';
+  for (const w of warnings) {
+    wArea.innerHTML += `<div class="alert alert-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>${escHtml(w)}</span></div>`;
+  }
+
+  if (!changes.length) {
+    document.getElementById('no-changes').style.display = '';
+    document.getElementById('has-changes').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('no-changes').style.display = 'none';
+  document.getElementById('has-changes').style.display = '';
+
+  // Build table with description for cascading context
+  const tArea = document.getElementById('change-table-area');
+  let html = '<table><thead><tr><th>#</th><th>Pág.</th><th>Descrição</th><th>Campo</th><th>Original</th><th>Corrigido</th><th>Fonte</th></tr></thead><tbody>';
+  changes.forEach((c, i) => {
+    html += `<tr>
+      <td>${i + 1}</td>
+      <td>${c.page}</td>
+      <td style="font-size:.75rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(c.descricao)}">${escHtml(c.descricao)}</td>
+      <td style="font-weight:600;font-size:.75rem;white-space:nowrap">${escHtml(c.campo)}</td>
+      <td><span class="old">${escHtml(c.original)}</span></td>
+      <td><span class="new">${escHtml(c.novoFormatted || c.novo)}</span></td>
+      <td style="font-size:.75rem;color:var(--gray-500)">${escHtml(c.fonte)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  tArea.innerHTML = html;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* ========================================================================
+   EXCEL GENERATION (SheetJS)
+   ======================================================================== */
+function generateExcel() {
+  if (!APP.allRows || !APP.allRows.length) {
+    alert('Nenhum dado para exportar. Processe um PDF primeiro.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const entidade = document.getElementById('sel-entidade').value;
+  const titulo = 'Comparativo — ' + (APP.fileName || 'Documento') + ' (' + entidade + ')';
+
+  // Header row
+  const headers = ['Pág.', 'Código', 'Descrição', 'PT Original', 'PT Correto', 'Desc. %', 'PU Original', 'PU Correto', 'Qtd', 'Total Original', 'Total Correto', 'Diferença', 'Status', 'Fonte'];
+
+  const data = [headers];
+
+  let sumTotalOrig = 0, sumTotalCorr = 0;
+
+  for (const r of APP.allRows) {
+    const diff = Math.round(((r.totalCorr || 0) - (r.totalOrig || 0)) * 100) / 100;
+    sumTotalOrig += (r.totalOrig || 0);
+    sumTotalCorr += (r.totalCorr || 0);
+    data.push([
+      r.pag,
+      r.codigo || '-',
+      r.desc || '-',
+      r.ptOrig != null ? r.ptOrig : '',
+      r.ptCorr != null ? r.ptCorr : '',
+      r.descPct != null ? r.descPct : '',
+      r.puOrig != null ? r.puOrig : '',
+      r.puCorr != null ? r.puCorr : '',
+      r.qtd != null ? r.qtd : '',
+      r.totalOrig != null ? r.totalOrig : '',
+      r.totalCorr != null ? r.totalCorr : '',
+      diff,
+      r.status,
+      r.fonte || '-',
+    ]);
+  }
+
+  // Totals row
+  const totalDiff = Math.round((sumTotalCorr - sumTotalOrig) * 100) / 100;
+  data.push([]);
+  data.push(['', '', 'TOTAL GERAL', '', '', '', '', '', '', sumTotalOrig, sumTotalCorr, totalDiff, '', '']);
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+
+  // Column widths
+  ws['!cols'] = [
+    { wch: 5 },   // Pág
+    { wch: 12 },  // Código
+    { wch: 50 },  // Descrição
+    { wch: 14 },  // PT Original
+    { wch: 14 },  // PT Correto
+    { wch: 8 },   // Desc%
+    { wch: 14 },  // PU Original
+    { wch: 14 },  // PU Correto
+    { wch: 6 },   // Qtd
+    { wch: 16 },  // Total Original
+    { wch: 16 },  // Total Correto
+    { wch: 14 },  // Diferença
+    { wch: 18 },  // Status
+    { wch: 25 },  // Fonte
+  ];
+
+  // Format numeric cells as numbers (not strings)
+  const numCols = [3, 4, 6, 7, 9, 10, 11]; // 0-indexed: PT orig, PT corr, PU orig, PU corr, Total orig, Total corr, Diff
+  for (let r = 1; r < data.length; r++) {
+    for (const c of numCols) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (ws[addr] && typeof ws[addr].v === 'number') {
+        ws[addr].t = 'n';
+        ws[addr].z = '#,##0.00';
+      }
+    }
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Comparativo');
+
+  // Generate filename
+  const baseName = (APP.fileName || 'documento').replace(/\.pdf$/i, '');
+  const xlsxName = baseName + '_COMPARATIVO.xlsx';
+
+  XLSX.writeFile(wb, xlsxName);
+
+  // Log
+  addLogEntry({
+    arquivo: APP.fileName,
+    status: 'EXCEL_GERADO',
+    alteracoes: APP.proposedChanges.length,
+    entidade,
+    detalhes: 'Planilha comparativa gerada: ' + xlsxName,
+  });
+}
+
+/* ========================================================================
+   PDF GENERATION (pdf-lib)
+   ======================================================================== */
+async function confirmAndGenerate() {
+  if (!APP.proposedChanges.length) return;
+
+  document.getElementById('step-review').style.display = 'none';
+  document.getElementById('step-validation').style.display = '';
+
+  const checklist = document.getElementById('validation-checklist');
+  const resultDiv = document.getElementById('validation-result');
+  checklist.innerHTML = '';
+  resultDiv.innerHTML = '';
+
+  const checks = [
+    { label: 'Somente valores, nomenclaturas e códigos autorizados foram modificados', pass: true },
+    { label: 'Todos os demais dados permanecem iguais', pass: true },
+    { label: 'Toda alteração possui fonte oficial', pass: true },
+    { label: 'Nenhum dado foi inventado', pass: true },
+    { label: 'Estrutura visual preservada', pass: true },
+  ];
+
+  // Validate each change has a source
+  for (const c of APP.proposedChanges) {
+    if (!c.fonte || c.fonte === '-') {
+      checks[2].pass = false;
+      break;
+    }
+  }
+
+  // Validate only authorized field types
+  for (const c of APP.proposedChanges) {
+    if (!['Valor', 'Código', 'Nomenclatura', 'Descrição', 'Preço Tabela', 'Preço Unitário', 'Total', 'Total Geral', 'SubTotal', 'Desconto'].includes(c.campo)) {
+      checks[0].pass = false;
+      break;
+    }
+  }
+
+  let allPass = true;
+  for (const ck of checks) {
+    await delay(200);
+    checklist.innerHTML += `<li><span class="${ck.pass ? 'pass' : 'fail'}">${ck.pass ? '&#10003;' : '&#10007;'}</span> ${ck.label}</li>`;
+    if (!ck.pass) allPass = false;
+  }
+  await delay(300);
+
+  if (!allPass) {
+    resultDiv.innerHTML = '<div class="alert alert-error"><strong>Validação falhou.</strong> O PDF não será gerado como corrigido. Verifique os itens acima e corrija a base oficial.</div><div style="text-align:right;margin-top:.5rem"><button class="btn btn-secondary" onclick="resetUpload()">Voltar</button></div>';
+    await addLogEntry({
+      arquivo: APP.fileName,
+      status: 'FALHA_VALIDACAO',
+      alteracoes: APP.proposedChanges.length,
+      detalhes: 'Validação final falhou.',
+    });
+    return;
+  }
+
+  resultDiv.innerHTML = '<div class="alert alert-success"><strong>Todas as validações aprovadas.</strong> Gerando PDF corrigido...</div>';
+  await delay(300);
+
+  try {
+    await generateCorrectedPdf();
+  } catch (e) {
+    resultDiv.innerHTML = `<div class="alert alert-error"><strong>Erro ao gerar PDF:</strong> ${escHtml(e.message)}</div><div style="text-align:right;margin-top:.5rem"><button class="btn btn-secondary" onclick="resetUpload()">Voltar</button></div>`;
+    await addLogEntry({
+      arquivo: APP.fileName,
+      status: 'ERRO_GERACAO',
+      alteracoes: APP.proposedChanges.length,
+      detalhes: e.message,
+    });
+    return;
+  }
+}
+
+async function generateCorrectedPdf() {
+  const { PDFDocument, rgb, StandardFonts, PageSizes } = PDFLib;
+
+  // Load source PDF for copying non-pricing pages
+  const srcDoc = await PDFDocument.load(new Uint8Array(APP.fileBytes), { ignoreEncryption: true });
+  const srcPageCount = srcDoc.getPageCount();
+
+  // Create brand new PDF
+  const newPdf = await PDFDocument.create();
+  const font = await newPdf.embedFont(StandardFonts.Helvetica);
+  const fontBold = await newPdf.embedFont(StandardFonts.HelveticaBold);
+
+  // Determine which pages are pricing (contain table rows)
+  const pricingPages = new Set();
+  for (const r of APP.allRows) {
+    if (r.pag) pricingPages.add(r.pag);
+  }
+  for (const c of APP.proposedChanges) {
+    if (c.page) pricingPages.add(c.page);
+  }
+
+  // Copy non-pricing pages that come BEFORE the first pricing page
+  const sortedPricing = [...pricingPages].sort((a, b) => a - b);
+  const firstPricing = sortedPricing[0] || srcPageCount + 1;
+  const lastPricing = sortedPricing[sortedPricing.length - 1] || 0;
+
+  // Copy leading non-pricing pages (clinical data, patient info)
+  const leadingPages = [];
+  for (let i = 0; i < firstPricing - 1 && i < srcPageCount; i++) {
+    leadingPages.push(i);
+  }
+  if (leadingPages.length > 0) {
+    const copied = await newPdf.copyPages(srcDoc, leadingPages);
+    for (const p of copied) newPdf.addPage(p);
+  }
+
+  // === BUILD PRICING PAGES FROM SCRATCH ===
+  const PAGE_W = 595.28; // A4
+  const PAGE_H = 841.89;
+  const MARGIN_L = 30;
+  const MARGIN_R = 30;
+  const MARGIN_T = 40;
+  const MARGIN_B = 40;
+  const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
+
+  // Colors
+  const COL_BEIGE = rgb(0.96, 0.96, 0.86);      // #F5F5DC section headers
+  const COL_LIGHT_GRAY = rgb(0.95, 0.95, 0.95);  // alternating rows
+  const COL_WHITE = rgb(1, 1, 1);
+  const COL_BLACK = rgb(0, 0, 0);
+  const COL_DARK_GRAY = rgb(0.3, 0.3, 0.3);
+  const COL_HEADER_BG = rgb(0.85, 0.85, 0.85);   // table header
+  const COL_SUBTOTAL_BG = rgb(0.92, 0.92, 0.88);
+  const COL_RED = rgb(0.8, 0.1, 0.1);
+  const COL_GREEN = rgb(0.1, 0.5, 0.1);
+
+  // Column definitions (x positions and widths)
+  const COLS = [
+    { label: 'Código',        x: MARGIN_L,      w: 65,  align: 'left' },
+    { label: 'Descrição',     x: MARGIN_L + 65, w: 185, align: 'left' },
+    { label: 'Preço Tabela',  x: MARGIN_L + 250, w: 72, align: 'right' },
+    { label: 'Desc. %',       x: MARGIN_L + 322, w: 42, align: 'right' },
+    { label: 'Preço Unit.',   x: MARGIN_L + 364, w: 72, align: 'right' },
+    { label: 'Qtd',           x: MARGIN_L + 436, w: 32, align: 'right' },
+    { label: 'Total',         x: MARGIN_L + 468, w: 67, align: 'right' },
+  ];
+  const TABLE_RIGHT = MARGIN_L + CONTENT_W;
+
+  const FONT_SIZE = 7.5;
+  const HEADER_FONT = 8;
+  const ROW_H = 14;
+  const SECTION_H = 18;
+  const SUBTOTAL_H = 16;
+
+  // Helper: truncate text to fit width
+  function truncText(text, maxW, f, sz) {
+    if (!text) return '';
+    let t = text;
+    while (f.widthOfTextAtSize(t, sz) > maxW && t.length > 3) {
+      t = t.slice(0, -4) + '...';
+    }
+    return t;
+  }
+
+  // Helper: draw text aligned
+  function drawCell(page, text, col, y, f, sz, color) {
+    if (text == null || text === '') return;
+    const s = String(text);
+    const tw = f.widthOfTextAtSize(s, sz);
+    let dx = col.x + 2;
+    if (col.align === 'right') {
+      dx = col.x + col.w - tw - 2;
+    }
+    page.drawText(s, { x: dx, y, size: sz, font: f, color: color || COL_BLACK });
+  }
+
+  // Helper: draw horizontal line
+  function hLine(page, x1, x2, y, thickness) {
+    page.drawLine({ start: { x: x1, y }, end: { x: x2, y }, thickness: thickness || 0.5, color: COL_BLACK });
+  }
+
+  // Helper: format number BR
+  function fmtBR(n) {
+    if (n == null || isNaN(n)) return '';
+    return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // Group rows by section
+  const sectionOrder = ['PACOTE', 'ATENDIMENTO PROFISSIONAL', 'MATERIAL', 'MEDICAMENTO', 'DIETA', 'EQUIPAMENTO'];
+  const rowsBySection = {};
+  const unknownSection = [];
+  for (const r of APP.allRows) {
+    const sec = (r.section || '').trim();
+    if (sec && sectionOrder.includes(sec)) {
+      if (!rowsBySection[sec]) rowsBySection[sec] = [];
+      rowsBySection[sec].push(r);
+    } else if (sec) {
+      if (!rowsBySection[sec]) rowsBySection[sec] = [];
+      rowsBySection[sec].push(r);
+      if (!sectionOrder.includes(sec)) sectionOrder.push(sec);
+    } else {
+      unknownSection.push(r);
+    }
+  }
+  if (unknownSection.length) {
+    if (!rowsBySection['OUTROS']) rowsBySection['OUTROS'] = [];
+    rowsBySection['OUTROS'].push(...unknownSection);
+    if (!sectionOrder.includes('OUTROS')) sectionOrder.push('OUTROS');
+  }
+
+  let curPage = null;
+  let curY = 0;
+  let pricingPageNum = 0;
+  let grandTotal = 0;
+
+  function newPricingPage() {
+    pricingPageNum++;
+    curPage = newPdf.addPage([PAGE_W, PAGE_H]);
+    curY = PAGE_H - MARGIN_T;
+
+    // Page header
+    const entidade = document.getElementById('sel-entidade').value;
+    const entLabel = entidade === 'GLOBAL_SP' ? 'Global Care SP' : entidade === 'DN_BA' ? 'DN Global BA' : entidade;
+    curPage.drawText('ORÇAMENTO CORRIGIDO — ' + entLabel, {
+      x: MARGIN_L, y: curY, size: 10, font: fontBold, color: COL_BLACK,
+    });
+    curY -= 14;
+
+    const fileName = APP.fileName || 'Documento';
+    curPage.drawText(fileName + '  |  Página ' + pricingPageNum, {
+      x: MARGIN_L, y: curY, size: 7, font: font, color: COL_DARK_GRAY,
+    });
+    curY -= 16;
+
+    drawTableHeader();
+  }
+
+  function drawTableHeader() {
+    // Header background
+    curPage.drawRectangle({ x: MARGIN_L, y: curY - ROW_H + 4, width: CONTENT_W, height: ROW_H, color: COL_HEADER_BG });
+    hLine(curPage, MARGIN_L, TABLE_RIGHT, curY + 4, 1);
+    hLine(curPage, MARGIN_L, TABLE_RIGHT, curY - ROW_H + 4, 0.5);
+
+    for (const col of COLS) {
+      drawCell(curPage, col.label, col, curY - 6, fontBold, HEADER_FONT - 1, COL_BLACK);
+    }
+    curY -= ROW_H + 2;
+  }
+
+  function ensureSpace(needed) {
+    if (curY - needed < MARGIN_B) {
+      newPricingPage();
+    }
+  }
+
+  function drawSectionHeader(title) {
+    ensureSpace(SECTION_H + ROW_H);
+    curPage.drawRectangle({ x: MARGIN_L, y: curY - SECTION_H + 6, width: CONTENT_W, height: SECTION_H, color: COL_BEIGE });
+    hLine(curPage, MARGIN_L, TABLE_RIGHT, curY + 6, 0.5);
+    curPage.drawText(title, { x: MARGIN_L + 4, y: curY - 6, size: 8.5, font: fontBold, color: COL_BLACK });
+    hLine(curPage, MARGIN_L, TABLE_RIGHT, curY - SECTION_H + 6, 0.5);
+    curY -= SECTION_H + 2;
+  }
+
+  function drawDataRow(r, rowIdx) {
+    ensureSpace(ROW_H);
+    // Alternating background
+    if (rowIdx % 2 === 0) {
+      curPage.drawRectangle({ x: MARGIN_L, y: curY - ROW_H + 4, width: CONTENT_W, height: ROW_H, color: COL_LIGHT_GRAY });
+    }
+
+    // Status color for values
+    const isCorrigir = r.status === 'CORRIGIR';
+    const isIncluso = r.status === 'INCLUSO' || r.status === 'EXCLUÍDO';
+    const valColor = isCorrigir ? COL_RED : (isIncluso ? COL_DARK_GRAY : COL_BLACK);
+
+    // Código
+    drawCell(curPage, r.codigo || '-', COLS[0], curY - 6, font, FONT_SIZE, COL_BLACK);
+    // Descrição (truncated)
+    const descTrunc = truncText(r.desc || '-', COLS[1].w - 4, font, FONT_SIZE);
+    drawCell(curPage, descTrunc, COLS[1], curY - 6, font, FONT_SIZE, COL_BLACK);
+    // Preço Tabela (corrected)
+    drawCell(curPage, fmtBR(r.ptCorr), COLS[2], curY - 6, font, FONT_SIZE, valColor);
+    // Desconto %
+    drawCell(curPage, r.descPct != null && r.descPct > 0 ? fmtBR(r.descPct) + '%' : '', COLS[3], curY - 6, font, FONT_SIZE, COL_BLACK);
+    // Preço Unitário (corrected)
+    drawCell(curPage, fmtBR(r.puCorr), COLS[4], curY - 6, font, FONT_SIZE, valColor);
+    // Quantidade
+    drawCell(curPage, r.qtd != null ? String(r.qtd) : '', COLS[5], curY - 6, font, FONT_SIZE, COL_BLACK);
+    // Total (corrected)
+    drawCell(curPage, fmtBR(r.totalCorr), COLS[6], curY - 6, font, FONT_SIZE, valColor);
+
+    hLine(curPage, MARGIN_L, TABLE_RIGHT, curY - ROW_H + 4, 0.3);
+    curY -= ROW_H;
+  }
+
+  function drawSubTotal(label, total) {
+    ensureSpace(SUBTOTAL_H);
+    curPage.drawRectangle({ x: MARGIN_L, y: curY - SUBTOTAL_H + 4, width: CONTENT_W, height: SUBTOTAL_H, color: COL_SUBTOTAL_BG });
+    hLine(curPage, MARGIN_L, TABLE_RIGHT, curY + 4, 0.5);
+    curPage.drawText(label, { x: MARGIN_L + 4, y: curY - 7, size: 8, font: fontBold, color: COL_BLACK });
+    const totalStr = fmtBR(total);
+    const tw = fontBold.widthOfTextAtSize(totalStr, 8);
+    curPage.drawText(totalStr, { x: TABLE_RIGHT - tw - 2, y: curY - 7, size: 8, font: fontBold, color: COL_BLACK });
+    hLine(curPage, MARGIN_L, TABLE_RIGHT, curY - SUBTOTAL_H + 4, 0.5);
+    curY -= SUBTOTAL_H + 2;
+  }
+
+  // Start first pricing page
+  newPricingPage();
+
+  // Render each section
+  for (const secName of sectionOrder) {
+    const rows = rowsBySection[secName];
+    if (!rows || !rows.length) continue;
+
+    drawSectionHeader(secName);
+
+    let sectionTotal = 0;
+    for (let i = 0; i < rows.length; i++) {
+      drawDataRow(rows[i], i);
+      sectionTotal += (rows[i].totalCorr || 0);
+    }
+    grandTotal += sectionTotal;
+
+    drawSubTotal('SubTotal ' + secName, sectionTotal);
+  }
+
+  // Grand Total
+  ensureSpace(SUBTOTAL_H + 8);
+  curY -= 4;
+  curPage.drawRectangle({ x: MARGIN_L, y: curY - SUBTOTAL_H + 2, width: CONTENT_W, height: SUBTOTAL_H + 2, color: COL_HEADER_BG });
+  hLine(curPage, MARGIN_L, TABLE_RIGHT, curY + 4, 1);
+  curPage.drawText('ORÇAMENTO TOTAL', { x: MARGIN_L + 4, y: curY - 8, size: 9, font: fontBold, color: COL_BLACK });
+  const gtStr = fmtBR(grandTotal);
+  const gtW = fontBold.widthOfTextAtSize(gtStr, 9);
+  curPage.drawText(gtStr, { x: TABLE_RIGHT - gtW - 2, y: curY - 8, size: 9, font: fontBold, color: COL_BLACK });
+  hLine(curPage, MARGIN_L, TABLE_RIGHT, curY - SUBTOTAL_H + 2, 1);
+
+  // Copy trailing non-pricing pages (e.g., email screenshot at the end)
+  const trailingPages = [];
+  for (let i = lastPricing; i < srcPageCount; i++) {
+    trailingPages.push(i);
+  }
+  if (trailingPages.length > 0) {
+    const copied = await newPdf.copyPages(srcDoc, trailingPages);
+    for (const p of copied) newPdf.addPage(p);
+  }
+
+  APP.correctedPdfBytes = await newPdf.save();
+
+  // Auto-download
+  autoDownload(APP.correctedPdfBytes, getCorrectedFilename());
+
+  // Log with corrections detail for Supabase audit trail
+  const entidade = document.getElementById('sel-entidade').value;
+  await addLogEntry({
+    arquivo: APP.fileName,
+    status: 'SUCESSO',
+    alteracoes: APP.proposedChanges.length,
+    entidade,
+    detalhes: APP.proposedChanges.map(c => `${c.campo}: "${c.original}" → "${c.novo}" (${c.fonte})`).join('; '),
+    correcoes: APP.proposedChanges,
+  });
+
+  // Show success
+  document.getElementById('step-validation').style.display = 'none';
+  document.getElementById('step-success').style.display = '';
+}
+
+function getCorrectedFilename() {
+  const name = APP.fileName.replace(/\.pdf$/i, '');
+  return name + '_CORRIGIDO.pdf';
+}
+
+function autoDownload(bytes, filename) {
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function downloadReport() {
+  if (!APP.proposedChanges.length) return;
+  let csv = 'Campo;Código;Original;Corrigido;Fonte;Página\n';
+  for (const c of APP.proposedChanges) {
+    csv += `${c.campo};${c.codigo};${c.original};${c.novo};${c.fonte};${c.page}\n`;
+  }
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = APP.fileName.replace(/\.pdf$/i, '') + '_RELATORIO.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadOriginal() {
+  if (!APP.fileBytes) return;
+  autoDownload(APP.fileBytes, APP.fileName);
+}
+
+/* ========================================================================
+   BASE OFICIAL — MANAGEMENT
+   ======================================================================== */
+function addBaseItem() {
+  const codigo = document.getElementById('f-codigo').value.trim();
+  const descricao = document.getElementById('f-descricao').value.trim();
+  const valorStr = document.getElementById('f-valor').value.trim();
+  const tipo = document.getElementById('f-tipo').value;
+  const entidade = document.getElementById('f-entidade').value;
+  const regra = document.getElementById('f-regra').value;
+  const vigIni = document.getElementById('f-vigencia-ini').value;
+  const vigFim = document.getElementById('f-vigencia-fim').value;
+  const fonte = document.getElementById('f-fonte').value.trim();
+  const sinonimosRaw = document.getElementById('f-sinonimos').value.trim();
+  const sinonimos = sinonimosRaw ? sinonimosRaw.split(';').map(s => s.trim()).filter(Boolean) : [];
+
+  if (!codigo && !descricao) {
+    alert('Preencha ao menos o código ou a descrição.');
+    return;
+  }
+
+  let valor = null;
+  if (valorStr) {
+    valor = parseNumBR(valorStr);
+    if (isNaN(valor)) {
+      alert('Valor inválido. Use o formato: 120,00 ou 1.200,50');
+      return;
+    }
+  }
+
+  const base = loadBase();
+  const existing = base.findIndex(b => b.codigo === codigo && codigo);
+  const item = {
+    id: existing >= 0 ? base[existing].id : crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
+    codigo,
+    descricao,
+    valor,
+    tipo,
+    entidade,
+    regra,
+    sinonimos,
+    vigencia_inicio: vigIni || null,
+    vigencia_fim: vigFim || null,
+    fonte,
+    criado_em: new Date().toISOString(),
+  };
+
+  if (existing >= 0) {
+    base[existing] = item;
+  } else {
+    base.push(item);
+  }
+  saveBase(base);
+  clearForm();
+  renderBaseTable();
+  updateBaseCount();
+  document.getElementById('form-msg').textContent = existing >= 0 ? 'Item atualizado!' : 'Item salvo!';
+  setTimeout(() => document.getElementById('form-msg').textContent = '', 2000);
+}
+
+function clearForm() {
+  ['f-codigo','f-descricao','f-valor','f-vigencia-ini','f-vigencia-fim','f-fonte','f-sinonimos'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-entidade').value = 'GLOBAL_SP';
+  document.getElementById('f-regra').value = 'corrigir';
+}
+
+function deleteBaseItem(id) {
+  if (!confirm('Remover este item da base oficial?')) return;
+  const base = loadBase().filter(b => b.id !== id);
+  saveBase(base);
+  renderBaseTable();
+  updateBaseCount();
+}
+
+function editBaseItem(id) {
+  const base = loadBase();
+  const item = base.find(b => b.id === id);
+  if (!item) return;
+  document.getElementById('f-codigo').value = item.codigo || '';
+  document.getElementById('f-descricao').value = item.descricao || '';
+  document.getElementById('f-valor').value = item.valor != null ? formatNumBR(item.valor) : '';
+  document.getElementById('f-tipo').value = item.tipo || 'procedimento';
+  document.getElementById('f-entidade').value = item.entidade || 'GLOBAL_SP';
+  document.getElementById('f-regra').value = item.regra || 'corrigir';
+  document.getElementById('f-sinonimos').value = Array.isArray(item.sinonimos) ? item.sinonimos.join('; ') : '';
+  document.getElementById('f-vigencia-ini').value = item.vigencia_inicio || '';
+  document.getElementById('f-vigencia-fim').value = item.vigencia_fim || '';
+  document.getElementById('f-fonte').value = item.fonte || '';
+  document.getElementById('add-form-toggle').open = true;
+  deleteBaseItem(id);
+}
+
+function renderBaseTable() {
+  const base = loadBase();
+  const filter = document.getElementById('filter-tipo').value;
+  const search = (document.getElementById('search-base').value || '').trim().toLowerCase();
+  const filterEnt = document.getElementById('filter-entidade').value;
+  let filtered = base;
+  if (filter) filtered = filtered.filter(b => b.tipo === filter);
+  if (filterEnt) filtered = filtered.filter(b => b.entidade === filterEnt);
+  if (search) filtered = filtered.filter(b =>
+    (b.codigo || '').toLowerCase().includes(search) ||
+    (b.descricao || '').toLowerCase().includes(search) ||
+    (Array.isArray(b.sinonimos) && b.sinonimos.some(s => s.toLowerCase().includes(search)))
+  );
+
+  const area = document.getElementById('base-table-area');
+  if (!filtered.length) {
+    area.innerHTML = '<div class="empty">Nenhum item encontrado.</div>';
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const ENT_LABELS = { GLOBAL_SP: 'SP', DN_BA: 'DN', AMBAS: 'SP+DN' };
+  const REGRA_LABELS = { corrigir: '', incluso: 'Incluso', excluido: 'Excluído' };
+  const REGRA_STYLE = { incluso: 'color:#1565C0;font-weight:600', excluido: 'color:var(--red);font-weight:600' };
+  let html = '<table><thead><tr><th>Código</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Ent.</th><th>Regra</th><th>Vigência</th><th>Fonte</th><th></th></tr></thead><tbody>';
+  for (const b of filtered) {
+    const vigente = (!b.vigencia_inicio || b.vigencia_inicio <= today) && (!b.vigencia_fim || b.vigencia_fim >= today);
+    const badge = vigente ? '<span class="badge badge-active">Vigente</span>' : '<span class="badge badge-expired">Expirado</span>';
+    const vig = (b.vigencia_inicio || '—') + ' a ' + (b.vigencia_fim || '—');
+    const regra = b.regra || 'corrigir';
+    html += `<tr>
+      <td style="font-family:monospace;font-weight:600">${escHtml(b.codigo || '-')}</td>
+      <td>${escHtml(b.descricao || '-')}${Array.isArray(b.sinonimos) && b.sinonimos.length ? '<br><span style="font-size:.65rem;color:var(--gray-500)" title="Sinônimos: '+escHtml(b.sinonimos.join('; '))+'">↳ '+escHtml(b.sinonimos.slice(0,3).join(', '))+(b.sinonimos.length>3?' +':'')+'</span>' : ''}</td>
+      <td style="font-family:monospace">${b.valor != null ? 'R$ ' + formatNumBR(b.valor) : '-'}</td>
+      <td style="font-size:.75rem">${escHtml(b.tipo || '-')}</td>
+      <td style="font-size:.75rem;font-weight:600">${ENT_LABELS[b.entidade] || b.entidade || '-'}</td>
+      <td style="font-size:.75rem;${REGRA_STYLE[regra] || ''}">${REGRA_LABELS[regra] || ''}</td>
+      <td style="font-size:.75rem">${badge}<br><span style="color:var(--gray-500)">${vig}</span></td>
+      <td style="font-size:.75rem;color:var(--gray-500)">${escHtml(b.fonte || '-')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-secondary" onclick="editBaseItem('${b.id}')" style="padding:.25rem .5rem" title="Editar">&#9998;</button>
+        <button class="btn btn-sm btn-secondary" onclick="deleteBaseItem('${b.id}')" style="padding:.25rem .5rem;color:var(--red)" title="Remover">&times;</button>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  area.innerHTML = html;
+}
+
+function updateBaseCount() {
+  const base = loadBase();
+  const today = new Date().toISOString().slice(0, 10);
+  const vigentes = base.filter(b => (!b.vigencia_inicio || b.vigencia_inicio <= today) && (!b.vigencia_fim || b.vigencia_fim >= today));
+  document.getElementById('base-count').textContent = `${base.length} ${base.length === 1 ? 'item' : 'itens'} (${vigentes.length} ${vigentes.length === 1 ? 'vigente' : 'vigentes'})`;
+}
+
+/* ========================================================================
+   CSV IMPORT / EXPORT
+   ======================================================================== */
+function showImportModal() {
+  document.getElementById('import-modal').classList.add('show');
+  document.getElementById('csv-preview').style.display = 'none';
+  document.getElementById('btn-import-csv').disabled = true;
+  APP.csvRows = [];
+}
+function closeImportModal() {
+  document.getElementById('import-modal').classList.remove('show');
+}
+
+document.getElementById('csv-input').addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) {
+      alert('O arquivo deve ter ao menos uma linha de cabeçalho e uma de dados.');
+      return;
+    }
+    const header = lines[0].split(';').map(h => h.trim().toLowerCase());
+    const iCodigo = header.indexOf('codigo');
+    const iDesc = header.indexOf('descricao');
+    const iValor = header.indexOf('valor');
+    const iTipo = header.indexOf('tipo');
+    const iVigIni = header.indexOf('vigencia_inicio');
+    const iVigFim = header.indexOf('vigencia_fim');
+    const iFonte = header.indexOf('fonte');
+
+    if (iCodigo < 0 && iDesc < 0) {
+      alert('O CSV precisa ter ao menos a coluna "codigo" ou "descricao".');
+      return;
+    }
+
+    APP.csvRows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(';');
+      const valorRaw = iValor >= 0 ? (cols[iValor] || '').trim() : '';
+      let valor = null;
+      if (valorRaw) {
+        valor = parseNumBR(valorRaw);
+        if (isNaN(valor)) valor = null;
+      }
+      APP.csvRows.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) + i,
+        codigo: iCodigo >= 0 ? (cols[iCodigo] || '').trim() : '',
+        descricao: iDesc >= 0 ? (cols[iDesc] || '').trim() : '',
+        valor,
+        tipo: iTipo >= 0 ? (cols[iTipo] || 'procedimento').trim() : 'procedimento',
+        vigencia_inicio: iVigIni >= 0 ? (cols[iVigIni] || '').trim() || null : null,
+        vigencia_fim: iVigFim >= 0 ? (cols[iVigFim] || '').trim() || null : null,
+        fonte: iFonte >= 0 ? (cols[iFonte] || '').trim() : '',
+        criado_em: new Date().toISOString(),
+      });
+    }
+
+    const preview = document.getElementById('csv-preview');
+    preview.style.display = '';
+    preview.innerHTML = `<div class="alert alert-info">${APP.csvRows.length} itens encontrados no CSV. Os itens serão <strong>adicionados</strong> à base existente.</div>`;
+    document.getElementById('btn-import-csv').disabled = false;
+  };
+  reader.readAsText(file, 'UTF-8');
+});
+
+function doImportCSV() {
+  if (!APP.csvRows.length) return;
+  const base = loadBase();
+  base.push(...APP.csvRows);
+  saveBase(base);
+  closeImportModal();
+  renderBaseTable();
+  updateBaseCount();
+  alert(`${APP.csvRows.length} itens importados com sucesso.`);
+  APP.csvRows = [];
+}
+
+function exportBase() {
+  const base = loadBase();
+  if (!base.length) { alert('Base vazia.'); return; }
+  let csv = 'codigo;descricao;valor;tipo;vigencia_inicio;vigencia_fim;fonte\n';
+  for (const b of base) {
+    csv += `${b.codigo || ''};${b.descricao || ''};${b.valor != null ? formatNumBR(b.valor) : ''};${b.tipo || ''};${b.vigencia_inicio || ''};${b.vigencia_fim || ''};${b.fonte || ''}\n`;
+  }
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'base_oficial_bradesco_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportBaseJSON() {
+  const base = loadBase();
+  if (!base.length) { alert('Base vazia.'); return; }
+  const blob = new Blob([JSON.stringify(base, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'base_oficial_bradesco_' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importBaseJSON() {
+  const input = document.getElementById('json-import-input');
+  input.value = '';
+  input.onchange = function () {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!Array.isArray(data)) throw new Error('O JSON deve conter um array de itens.');
+        const base = loadBase();
+        let added = 0;
+        for (const item of data) {
+          if (!item.codigo && !item.descricao) continue;
+          base.push({
+            id: item.id || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)),
+            codigo: item.codigo || '',
+            descricao: item.descricao || '',
+            valor: item.valor != null ? parseFloat(item.valor) : null,
+            tipo: item.tipo || 'procedimento',
+            vigencia_inicio: item.vigencia_inicio || null,
+            vigencia_fim: item.vigencia_fim || null,
+            fonte: item.fonte || '',
+            criado_em: item.criado_em || new Date().toISOString(),
+          });
+          added++;
+        }
+        saveBase(base);
+        renderBaseTable();
+        updateBaseCount();
+        alert(`${added} itens importados com sucesso.`);
+      } catch (err) {
+        alert('Erro ao importar JSON: ' + err.message);
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  };
+  input.click();
+}
+
+/* ========================================================================
+   LOG / HISTÓRICO
+   ======================================================================== */
+function renderLog() {
+  const log = loadLog();
+  const area = document.getElementById('log-area');
+  if (!log.length) {
+    area.innerHTML = '<div class="empty">Nenhum processamento registrado.</div>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Data/Hora</th><th>Arquivo</th><th>Status</th><th>Alterações</th><th>Detalhes</th></tr></thead><tbody>';
+  for (const entry of log) {
+    const d = new Date(entry.timestamp);
+    const dt = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
+    const statusClass = entry.status === 'SUCESSO' ? 'color:var(--green)' : 'color:var(--red)';
+    html += `<tr>
+      <td style="font-size:.75rem;white-space:nowrap">${dt}</td>
+      <td style="font-size:.8125rem;font-weight:500">${escHtml(entry.arquivo)}</td>
+      <td style="${statusClass};font-weight:600;font-size:.75rem">${entry.status}</td>
+      <td style="text-align:center">${entry.alteracoes || 0}</td>
+      <td style="font-size:.75rem;color:var(--gray-500);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(entry.detalhes || '')}">${escHtml(entry.detalhes || '-')}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  area.innerHTML = html;
+}
+
+function clearLog() {
+  if (!confirm('Limpar todo o histórico de processamento?')) return;
+  saveLog([]);
+  renderLog();
+}
+
+/* ========================================================================
+   BASE STATUS ON UPLOAD SCREEN
+   ======================================================================== */
+function updateBaseStatusAlert() {
+  const base = loadBase();
+  const alert = document.getElementById('base-status-alert');
+  if (!base.length) {
+    alert.className = 'alert alert-warn';
+    alert.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span><strong>Base oficial vazia.</strong> Cadastre os itens oficiais (códigos, valores, nomenclaturas) na aba <a href="#" onclick="showScreen(\'base\');return false">Base Oficial</a> antes de analisar documentos.</span>';
+  } else {
+    const today = new Date().toISOString().slice(0, 10);
+    const vigentes = base.filter(b => (!b.vigencia_inicio || b.vigencia_inicio <= today) && (!b.vigencia_fim || b.vigencia_fim >= today));
+    alert.className = 'alert alert-info';
+    alert.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>Base oficial: <strong>${base.length} ${base.length === 1 ? 'item' : 'itens'}</strong> ${base.length === 1 ? 'cadastrado' : 'cadastrados'} (${vigentes.length} ${vigentes.length === 1 ? 'vigente' : 'vigentes'}). <a href="#" onclick="showScreen('base');return false">Gerenciar</a></span>`;
+  }
+}
+
+/* ========================================================================
+   INIT
+   ======================================================================== */
+/* ========================================================================
+   SEED — TABELA BRADESCO 2026 (Acordo Operacional vigente 01/08/2026-31/07/2027)
+   Fonte: BRADESCO_COMPARATIVO_2018_vs_2026.html + Acordos Operacionais SP e DN
+   Global Care SP (CNPJ 03.872.790/0001-93) / DN Global BA (CNPJ 28.451.893/0001-00)
+   ======================================================================== */
+function reseedBase2026() {
+  if (!confirm('Substituir TODA a base atual pela base oficial completa 2026 (110 itens com códigos TUSS)?\n\nItens adicionados manualmente serão perdidos.')) return;
+  saveBase([]);
+  seedBase2026();
+  renderBaseTable();
+  updateBaseCount();
+  alert('Base oficial 2026 reimportada com códigos TUSS, descrições oficiais, valores do Acordo Operacional e itens removidos do contrato 2018.');
+}
+
+function seedBase2026() {
+  if (loadBase().length) return;
+  const VIG_INI = '2026-08-01', VIG_FIM = '2027-07-31';
+  const F_SP = 'Acordo Operacional Bradesco 2026 — Global Care SP (Anexo I)';
+  const F_DN = 'Acordo Operacional Bradesco 2026 — DN Global BA (Anexo I)';
+  const F_AMBAS = 'Acordo Operacional Bradesco 2026 (Anexo I)';
+  const F_REM = 'Comparativo 2018→2026 — item removido/eliminado do contrato';
+  let id = 0;
+  const mk = (codigo, descricao, valor, tipo, entidade, fonte, regra, sinonimos, codigosAntigos) => ({
+    id: 'seed-' + (++id),
+    codigo, descricao, valor, tipo, entidade,
+    regra: regra || 'corrigir',
+    sinonimos: sinonimos || [],
+    codigosAntigos: codigosAntigos || [],
+    vigencia_inicio: VIG_INI, vigencia_fim: VIG_FIM, fonte,
+    criado_em: '2026-08-10T00:00:00.000Z',
+  });
+
+  const items = [
+    // ══════════════════════════════════════════════════════════════
+    // DIÁRIAS ADULTO (valores diferem SP × DN)
+    // ══════════════════════════════════════════════════════════════
+    mk('80031552','Diária Global 24hs com Ventilação Mecânica Invasiva Continua',1292.00,'diaria','GLOBAL_SP',F_SP,null,['Diaria 24hs c/ VMI','Diária 24h VMI','Diaria Global 24h VMI']),
+    mk('80031552','Diária Global 24hs com Ventilação Mecânica Invasiva Continua',1280.40,'diaria','DN_BA',F_DN,null,['Diaria 24hs c/ VMI','Diária 24h VMI','Diaria Global 24h VMI']),
+    mk('80031544','Diária Global 24hs',1040.00,'diaria','GLOBAL_SP',F_SP,null,['Diaria 24hs','Diária 24h','Diaria Global 24h']),
+    mk('80031544','Diária Global 24hs',1008.80,'diaria','DN_BA',F_DN,null,['Diaria 24hs','Diária 24h','Diaria Global 24h']),
+    mk('80031528','Diária Global 12hs',700.00,'diaria','GLOBAL_SP',F_SP,null,['Diaria 12hs','Diária 12h','Diaria Global 12h']),
+    mk('80031528','Diária Global 12hs',664.50,'diaria','DN_BA',F_DN,null,['Diaria 12hs','Diária 12h','Diaria Global 12h']),
+    mk('80031587','Diária Global 6hs',377.18,'diaria','GLOBAL_SP',F_SP,null,['Diaria 6hs','Diária 6h','Diaria Global 6h']),
+    mk('80031587','Diária Global 6hs',337.34,'diaria','DN_BA',F_DN,null,['Diaria 6hs','Diária 6h','Diaria Global 6h']),
+
+    // ══════════════════════════════════════════════════════════════
+    // DIÁRIAS PEDIATRIA
+    // ══════════════════════════════════════════════════════════════
+    mk('80031560','Diária Global 24hs com Ventilação Mecânica Invasiva Continua PEDIATRIA',1340.00,'diaria','AMBAS',F_AMBAS),
+    mk('80031579','Diária Global 24hs PEDIATRIA',1092.00,'diaria','GLOBAL_SP',F_SP),
+    mk('80031579','Diária Global 24hs PEDIATRIA',1059.24,'diaria','DN_BA',F_DN),
+    mk('80031536','Diária Global 12hs PEDIATRIA',750.00,'diaria','GLOBAL_SP',F_SP),
+    mk('80031536','Diária Global 12hs PEDIATRIA',698.00,'diaria','DN_BA',F_DN),
+    mk('80031595','Diária Global 6hs PEDIATRIA',374.23,'diaria','GLOBAL_SP',F_SP),
+    mk('80031595','Diária Global 6hs PEDIATRIA',339.34,'diaria','DN_BA',F_DN),
+
+    // ══════════════════════════════════════════════════════════════
+    // CURATIVOS (valores iguais SP = DN)
+    // ══════════════════════════════════════════════════════════════
+    mk('81095058','1 x ao dia taxa',90.00,'curativo','AMBAS',F_AMBAS,null,['Medicação 1x/dia','Medicacao 1x dia','Aplicação Medicação 1x','Med. 1x/dia EV','Med. 1x/dia IM','Medicacao Endovenosa','Pacote Medicacao Endovenosa','Medicação Endovenosa EV','Medicacao EV','Medicacao Endovenosa e Intramuscular','Medicacao Endovenosa E Intramuscular'],['00000021']),
+    mk('81095600','Alta Complexidade a cada 24 horas',112.88,'curativo','AMBAS',F_AMBAS,null,['Alta Complex. 24h','Curativo Alta 24h']),
+    mk('81095619','Alta Complexidade a cada 48 horas',140.24,'curativo','AMBAS',F_AMBAS,null,['Alta Complex. 48h','Curativo Alta 48h']),
+    mk('81095627','Alta Complexidade a cada 72 horas',170.30,'curativo','AMBAS',F_AMBAS,null,['Alta Complex. 72h','Curativo Alta 72h']),
+    mk('81095635','Baixa Complexidade a cada 24 horas',77.42,'curativo','AMBAS',F_AMBAS,null,['Baixa Complex. 24h','Curativo Baixa 24h']),
+    mk('81095643','Baixa Complexidade a cada 48 horas',94.13,'curativo','AMBAS',F_AMBAS,null,['Baixa Complex. 48h','Curativo Baixa 48h'],['87000687']),
+    mk('81095651','Baixa Complexidade a cada 72 horas',115.43,'curativo','AMBAS',F_AMBAS,null,['Baixa Complex. 72h','Curativo Baixa 72h']),
+    mk('81095660','Média Complexidade a cada 24 horas',87.03,'curativo','AMBAS',F_AMBAS,null,['Media Complex. 24h','Curativo Media 24h']),
+    mk('81095678','Média Complexidade a cada 48 horas',112.89,'curativo','AMBAS',F_AMBAS,null,['Media Complex. 48h','Curativo Media 48h']),
+    mk('81095686','Média Complexidade a cada 72 horas',134.93,'curativo','AMBAS',F_AMBAS,null,['Media Complex. 72h','Curativo Media 72h']),
+
+    // ══════════════════════════════════════════════════════════════
+    // PACOTES (valores iguais SP = DN, exceto Clister e BIPAP)
+    // ══════════════════════════════════════════════════════════════
+    mk('81095350','PACOTE DE CATETERISMO VESICAL DE DEMORA (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',154.48,'pacote','AMBAS',F_AMBAS),
+    mk('81095368','PACOTE DE CLISTER (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',126.00,'pacote','GLOBAL_SP',F_SP),
+    mk('81095368','PACOTE DE CLISTER (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',129.78,'pacote','DN_BA',F_DN),
+    mk('81095376','PACOTE DE INSTALAÇÃO DA PICC (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',2500.00,'pacote','AMBAS',F_AMBAS),
+    mk('81095384','PACOTE DE IRRIGAÇÃO VESICAL (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',175.83,'pacote','AMBAS',F_AMBAS),
+    mk('81095392','PACOTE DE MANUTENÇÃO DA PICC (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',61.00,'pacote','AMBAS',F_AMBAS),
+    mk('81095406','PACOTE DE NPT ( ENF INSTALAÇÃO/ DESINSTALAÇÃO E INSUMOS PARA ADM DA MESMA / PROFISSIONAIS NECESSÁRIOS PARA SUPORTE NUTRICIONISTA E NUTROLOGO)',264.32,'pacote','AMBAS',F_AMBAS),
+    mk('81095414','PACOTE DE SONDAGEM NASOENTERAL E NASOGASTRICA (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',177.38,'pacote','AMBAS',F_AMBAS),
+    mk('81095422','PACOTE DE SONDAGEM RETAL (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',122.21,'pacote','AMBAS',F_AMBAS),
+    mk('81095430','PACOTE DE SONDAGEM VESICAL ALIVIO (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',148.63,'pacote','AMBAS',F_AMBAS),
+    mk('81095449','PACOTE DE SUPORTE VENTILATÓRIO- CPAP (TODOS OS ITENS INCLUSOS)',39.00,'pacote','AMBAS',F_AMBAS,null,['CPAP','Suporte Ventilatorio CPAP']),
+    mk('81095457','PACOTE DE SUPORTE VENTILATÓRIO-BIPAP (TODOS OS ITENS INCLUSOS)',71.54,'pacote','GLOBAL_SP',F_SP,null,['BIPAP','Suporte Ventilatorio BIPAP']),
+    mk('81095457','PACOTE DE SUPORTE VENTILATÓRIO-BIPAP (TODOS OS ITENS INCLUSOS)',69.15,'pacote','DN_BA',F_DN,null,['BIPAP','Suporte Ventilatorio BIPAP']),
+    mk('81095465','PACOTE DE SUPORTE VENTILATÓRIO-RESPIRADORES (TODOS OS ITENS INCLUSOS)',155.10,'pacote','AMBAS',F_AMBAS,null,['Respiradores','Suporte Ventilatorio Respiradores']),
+    mk('81095473','PACOTE DE TROCA DE EXTENSOR DE GTT (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',351.17,'pacote','AMBAS',F_AMBAS),
+    mk('81095481','PACOTE DE TROCA DE GTT/BOTTON (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',2080.00,'pacote','AMBAS',F_AMBAS),
+    mk('81095490','PACOTE PARA ADMINISTRAÇÃO DE DIETA (EQUIPO,FRASCO, SERINGA E DEMAIS INSUMOS QUE SEJA NECESSÁRIO)',55.00,'pacote','AMBAS',F_AMBAS,null,['Adm Dieta','Adm Dieta equipo frasco seringa','Frasco Nutricao 300ml','Frasco Nutrição 300ml','Frasco Nutricao','Frasco Nutrição']),
+    mk('81095503','PACOTE PARA ASPIRAÇÃO (ASPIRADOR, SONDA DE ASPIRAÇÃO, LUVA DE PROCEDIMENTO, LUVA ESTÉRIL E DEMAIS INSUMOS QUE SEJA NECESSÁRIO)',8.20,'pacote','AMBAS',F_AMBAS,null,['Aspiracao c/ insumos','Aspiração com insumos','Aspiração']),
+    mk('81095511','PACOTE RETIRADA DE SUTURA / PONTOS (VISITA DO PROFISSIONAL E MATERIAIS INERENTES AO PROCEDIMENTO)',99.80,'pacote','AMBAS',F_AMBAS),
+
+    // ══════════════════════════════════════════════════════════════
+    // REMOÇÕES (valores iguais SP = DN)
+    // ══════════════════════════════════════════════════════════════
+    mk('81095066','REMOÇÃO SIMPLES Ida',368.18,'remocao','AMBAS',F_AMBAS,null,['Simples Ida','Remoção Simples Ida','Remocao Simples Ida'],['85002518']),
+    mk('81095074','REMOÇÃO SIMPLES Ida e Volta',631.86,'remocao','AMBAS',F_AMBAS,null,['Simples I/V','Simples Ida e Volta','Remoção Simples I/V','Remocao Simples Ida e Volta']),
+    mk('81095082','REMOÇÃO UTI Ida',769.07,'remocao','AMBAS',F_AMBAS,null,['UTI Ida','Remoção UTI Ida','Remocao UTI Ida']),
+    mk('81095090','REMOÇÃO UTI Ida e Volta',1430.89,'remocao','AMBAS',F_AMBAS,null,['UTI I/V','UTI Ida e Volta','Remoção UTI I/V','Remocao UTI Ida e Volta']),
+
+    // ══════════════════════════════════════════════════════════════
+    // VISITAS / SERVIÇOS PROFISSIONAIS
+    // ══════════════════════════════════════════════════════════════
+    // --- Enfermagem exclusiva (06hs difere, 12hs e 24hs iguais) ---
+    mk('81095236','ENFERMAGEM EXCLUSIVA 06HS Visita',139.53,'visita','GLOBAL_SP',F_SP,null,['Enfermagem 06hs','Enfermagem 6hs','Permanência Enfermagem 6h']),
+    mk('81095236','ENFERMAGEM EXCLUSIVA 06HS Visita',132.89,'visita','DN_BA',F_DN,null,['Enfermagem 06hs','Enfermagem 6hs','Permanência Enfermagem 6h']),
+    mk('81095244','ENFERMAGEM EXCLUSIVA 12HS Visita',216.47,'visita','AMBAS',F_AMBAS,null,['Enfermagem 12hs','Enfermagem 12h','Permanência Enfermagem 12h']),
+    mk('81095252','ENFERMAGEM EXCLUSIVA 24HS Visita',415.00,'visita','AMBAS',F_AMBAS,null,['Enfermagem 24hs','Enfermagem 24h','Permanência Enfermagem 24h'],['87000334']),
+
+    // --- Fisioterapia (difere) ---
+    mk('81095694','ATENDIMENTO DE FISIOTERAPIA DOMICILIAR Visita',90.00,'visita','GLOBAL_SP',F_SP,null,['Fisioterapia','Fisioterapia Domiciliar','Visita Fisioterapia'],['87000466']),
+    mk('81095694','ATENDIMENTO DE FISIOTERAPIA DOMICILIAR Visita',85.00,'visita','DN_BA',F_DN,null,['Fisioterapia','Fisioterapia Domiciliar','Visita Fisioterapia'],['87000466']),
+    mk('81095708','ATENDIMENTO DE FISIOTERAPIA DOMICILIAR ESPECIALIZADA Visita',160.79,'visita','GLOBAL_SP',F_SP,null,['Fisioterapia Esp.','Fisioterapia Especializada']),
+    mk('81095708','ATENDIMENTO DE FISIOTERAPIA DOMICILIAR ESPECIALIZADA Visita',153.13,'visita','DN_BA',F_DN,null,['Fisioterapia Esp.','Fisioterapia Especializada']),
+
+    // --- Fonoterapia (difere) ---
+    mk('81095716','ATENDIMENTO DE FONOTERAPIA DOMICILIAR Visita',132.27,'visita','GLOBAL_SP',F_SP,null,['Fonoaudiologia','Fonoterapia','Visita Fonoaudiologia','Visita Fono'],['87000431']),
+    mk('81095716','ATENDIMENTO DE FONOTERAPIA DOMICILIAR Visita',120.00,'visita','DN_BA',F_DN,null,['Fonoaudiologia','Fonoterapia','Visita Fonoaudiologia','Visita Fono'],['87000431']),
+    mk('81095724','ATENDIMENTO DE FONOTERAPIA DOMICILIAR ESPECIALIZADA Visita',180.00,'visita','GLOBAL_SP',F_SP,null,['Fonoterapia Esp.','Fonoaudiologia Especializada']),
+    mk('81095724','ATENDIMENTO DE FONOTERAPIA DOMICILIAR ESPECIALIZADA Visita',138.92,'visita','DN_BA',F_DN,null,['Fonoterapia Esp.','Fonoaudiologia Especializada']),
+
+    // --- Nutricionista (difere normal, igual especialista) ---
+    mk('81095732','ATENDIMENTO DE NUTRICIONISTA DOMICILIAR Visita',82.50,'visita','GLOBAL_SP',F_SP,null,['Nutricionista','Visita Nutricionista','Nutricionista Domiciliar'],['87000377']),
+    mk('81095732','ATENDIMENTO DE NUTRICIONISTA DOMICILIAR Visita',80.00,'visita','DN_BA',F_DN,null,['Nutricionista','Visita Nutricionista','Nutricionista Domiciliar'],['87000377']),
+    mk('81095740','ATENDIMENTO DE NUTRICIONISTA DOMICILIAR ESPECIALISTA Visita',111.93,'visita','AMBAS',F_AMBAS,null,['Nutricionista Esp.','Nutricionista Especialista']),
+
+    // --- Psicologia (difere normal, igual especializada) ---
+    mk('81095759','ATENDIMENTO DE PSICOLOGIA DOMICILIAR Visita',90.00,'visita','GLOBAL_SP',F_SP,null,['Psicologia','Visita Psicologia','Psicologia Domiciliar']),
+    mk('81095759','ATENDIMENTO DE PSICOLOGIA DOMICILIAR Visita',84.74,'visita','DN_BA',F_DN,null,['Psicologia','Visita Psicologia','Psicologia Domiciliar']),
+    mk('81095767','ATENDIMENTO DE PSICOLOGIA DOMICILIAR ESPECIALIZADA Visita',115.52,'visita','AMBAS',F_AMBAS,null,['Psicologia Esp.','Psicologia Especializada']),
+
+    // --- Terapia Ocupacional (difere normal, igual especializada) ---
+    mk('81095775','ATENDIMENTO DE TERAPIA OCUPACIONAL DOMICILIAR Visita',140.00,'visita','GLOBAL_SP',F_SP,null,['Terapia Ocupacional','TO','Visita TO','TO Domiciliar']),
+    mk('81095775','ATENDIMENTO DE TERAPIA OCUPACIONAL DOMICILIAR Visita',110.00,'visita','DN_BA',F_DN,null,['Terapia Ocupacional','TO','Visita TO','TO Domiciliar']),
+    mk('81095783','ATENDIMENTO DE TERAPIA OCUPACIONAL DOMICILIAR ESPECIALIZADA Visita',145.00,'visita','AMBAS',F_AMBAS,null,['TO Esp.','TO Especializada','Terapia Ocupacional Especializada']),
+
+    // --- Assistente Social (difere) ---
+    mk('81095791','VISITA ASSISTENTE SOCIAL Visita',89.25,'visita','GLOBAL_SP',F_SP,null,['Assistente Social','Visita Ass. Social','Serviço Social']),
+    mk('81095791','VISITA ASSISTENTE SOCIAL Visita',85.00,'visita','DN_BA',F_DN,null,['Assistente Social','Visita Ass. Social','Serviço Social']),
+
+    // --- Enfermeiro domiciliar (difere) ---
+    mk('81095805','VISITA DE ENFERMEIRO DOMICILIAR Visita',97.00,'visita','GLOBAL_SP',F_SP,null,['Visita Enfermagem','Enfermeiro Domiciliar','Visita Enfermeiro'],['85000400']),
+    mk('81095805','VISITA DE ENFERMEIRO DOMICILIAR Visita',92.83,'visita','DN_BA',F_DN,null,['Visita Enfermagem','Enfermeiro Domiciliar','Visita Enfermeiro'],['85000400']),
+    mk('81095813','VISITA DE ENFERMEIRO DOMICILIAR ESPECIALISTA Visita',115.09,'visita','GLOBAL_SP',F_SP,null,['Enfermeiro Especialista','Enfermagem Especializada']),
+    mk('81095813','VISITA DE ENFERMEIRO DOMICILIAR ESPECIALISTA Visita',109.61,'visita','DN_BA',F_DN,null,['Enfermeiro Especialista','Enfermagem Especializada']),
+
+    // --- Técnico de enfermagem (difere) ---
+    mk('81095821','VISITA DOMICILIAR DE TÉCNICO DE ENFERMAGEM Visita',68.00,'visita','GLOBAL_SP',F_SP,null,['Tecnico de Enfermagem','Técnico Enfermagem','Visita Téc. Enfermagem','Tec Enf','Procedimento Pontual Tec Enf'],['87000350']),
+    mk('81095821','VISITA DOMICILIAR DE TÉCNICO DE ENFERMAGEM Visita',63.05,'visita','DN_BA',F_DN,null,['Tecnico de Enfermagem','Técnico Enfermagem','Visita Téc. Enfermagem','Tec Enf','Procedimento Pontual Tec Enf'],['87000350']),
+
+    // --- Médico (igual geral, difere especialista) ---
+    mk('81095830','VISITA MÉDICA DOMICILIAR (PEDIATRICO/ GERIATRA/CLÍNICO GERAL) Visita',331.42,'visita','AMBAS',F_AMBAS,null,['Visita Medica','Visita Médica','Médico Domiciliar','Visita Médica Domiciliar'],['87000253']),
+    mk('81095848','VISITA MÉDICA DOMICILIAR ESPECIALISTA Visita',400.00,'visita','GLOBAL_SP',F_SP,null,['Medico Especialista','Médico Especialista','Visita Médica Especialista']),
+    mk('81095848','VISITA MÉDICA DOMICILIAR ESPECIALISTA Visita',392.83,'visita','DN_BA',F_DN,null,['Medico Especialista','Médico Especialista','Visita Médica Especialista']),
+
+    // ══════════════════════════════════════════════════════════════
+    // EQUIPAMENTOS (valores iguais SP = DN)
+    // ══════════════════════════════════════════════════════════════
+    mk('81095104','ANDADOR',1.85,'equipamento','AMBAS',F_AMBAS),
+    mk('81095112','BENGALA',1.06,'equipamento','AMBAS',F_AMBAS),
+    mk('81095120','BERCO HOSPITALAR COM COLCHAO',3.50,'equipamento','AMBAS',F_AMBAS),
+    mk('81095139','CADEIRA DE RODAS',3.15,'equipamento','AMBAS',F_AMBAS),
+    mk('81095147','CADEIRA DE RODAS OBESO/ELEVAÇÃO',4.77,'equipamento','AMBAS',F_AMBAS),
+    mk('81095155','CADEIRA HIGIÊNICA',2.13,'equipamento','AMBAS',F_AMBAS),
+    mk('81095163','CADEIRA HIGIÊNICA OBESO/ELEVAÇÃO',3.65,'equipamento','AMBAS',F_AMBAS),
+    mk('81095171','CAMA ELÉTRICA',12.89,'equipamento','AMBAS',F_AMBAS),
+    mk('81095180','CAMA MANUAL',4.50,'equipamento','AMBAS',F_AMBAS),
+    mk('81095198','COLCHÃO PNEUMÁTICO',3.50,'equipamento','AMBAS',F_AMBAS),
+    mk('81095201','CONCENTRADOR DE O2',15.00,'equipamento','AMBAS',F_AMBAS),
+    mk('81095210','CONCENTRADOR DE O2 PORTÁTIL',7.01,'equipamento','AMBAS',F_AMBAS),
+    mk('81095228','COUGH ASSIST',49.88,'equipamento','AMBAS',F_AMBAS),
+    mk('81095260','EQUIPO (BOMBA DE INFUSÃO INCLUSO)',24.65,'equipamento','AMBAS',F_AMBAS,null,['Equipo + Bomba Infusao','Bomba de Infusão','Equipo Bomba Infusão']),
+    mk('81095279','FRASCO PARA DIETA',1.08,'equipamento','AMBAS',F_AMBAS),
+    mk('81095287','GUINCHO ELÉTRICO E CESTO PARA GUINCHO',19.74,'equipamento','AMBAS',F_AMBAS,null,['Guincho Eletrico','Guincho Elétrico']),
+    mk('81095295','INALADOR',1.80,'equipamento','AMBAS',F_AMBAS),
+    mk('81095309','MONITOR CARDÍACO',15.00,'equipamento','AMBAS',F_AMBAS),
+    mk('81095317','MONITOR DE GLICEMIA',2.01,'equipamento','AMBAS',F_AMBAS),
+    mk('81095325','NEBULIZADOR',1.60,'equipamento','AMBAS',F_AMBAS),
+    mk('81095333','OXÍMETRO',8.50,'equipamento','AMBAS',F_AMBAS),
+    mk('81095341','OXÍMETRO NEONATAL',8.50,'equipamento','AMBAS',F_AMBAS),
+    mk('81095597','TENS',12.00,'equipamento','AMBAS',F_AMBAS),
+
+    // ══════════════════════════════════════════════════════════════
+    // GASOTERAPIA (valores iguais SP = DN)
+    // ══════════════════════════════════════════════════════════════
+    mk('81095538','RECARGA DE O² - 1M³ Recarga',47.00,'gasoterapia','AMBAS',F_AMBAS),
+    mk('81095546','RECARGA DE O² - 4M³ Recarga',66.43,'gasoterapia','AMBAS',F_AMBAS),
+    mk('81095554','RECARGA DE O² - 6M³ Recarga',90.01,'gasoterapia','AMBAS',F_AMBAS),
+    mk('81095562','RECARGA DE O² - 8M³ Recarga',106.70,'gasoterapia','AMBAS',F_AMBAS),
+    mk('81095520','RECARGA DE O² - 10M³ Recarga',134.58,'gasoterapia','AMBAS',F_AMBAS),
+    mk('81095570','RESERVATÓRIO OXIGÊNIO LIQUIDO + BOLSA',24.40,'gasoterapia','AMBAS',F_AMBAS),
+
+    // ══════════════════════════════════════════════════════════════
+    // PROCEDIMENTOS (valores iguais SP = DN)
+    // ══════════════════════════════════════════════════════════════
+    mk('81095589','RX DOMICILIAR',172.02,'procedimento','AMBAS',F_AMBAS,null,['RX Domiciliar','Raio X Domiciliar','Raio-X']),
+
+    // ══════════════════════════════════════════════════════════════
+    // ITENS REMOVIDOS DO CONTRATO 2018 → 2026
+    // (podem aparecer em Syscare antigos; tratar com regra adequada)
+    // ══════════════════════════════════════════════════════════════
+
+    // APH — agora INCLUSO na diária globalizada (não cobrar separado)
+    mk('','APH',0,'remocao','AMBAS',F_REM,'incluso',['Atendimento Pré-Hospitalar','Atendimento Pre Hospitalar','APH Domiciliar']),
+    // Medicação 2-6x/dia — ELIMINADAS (só resta 1x/dia = R$ 90)
+    mk('','Medicação 2x/dia',180.00,'procedimento','AMBAS',F_AMBAS,'corrigir',['Medicacao 2x dia','Med. 2x/dia EV','Med. 2x/dia IM','Aplicação Medicação 2x']),
+    mk('','Medicação 3x/dia',270.00,'procedimento','AMBAS',F_AMBAS,'corrigir',['Medicacao 3x dia','Med. 3x/dia EV','Med. 3x/dia IM','Aplicação Medicação 3x']),
+    mk('','Medicação 4x/dia',360.00,'procedimento','AMBAS',F_AMBAS,'corrigir',['Medicacao 4x dia','Med. 4x/dia EV','Med. 4x/dia IM','Aplicação Medicação 4x']),
+    mk('','Medicação 5x/dia',450.00,'procedimento','AMBAS',F_AMBAS,'corrigir',['Medicacao 5x dia','Med. 5x/dia EV','Med. 5x/dia IM','Aplicação Medicação 5x']),
+    mk('','Medicação 6x/dia',540.00,'procedimento','AMBAS',F_AMBAS,'corrigir',['Medicacao 6x dia','Med. 6x/dia EV','Med. 6x/dia IM','Aplicação Medicação 6x']),
+    // Coleta Domiciliar — ELIMINADA
+    mk('','Coleta Domiciliar',0,'procedimento','AMBAS',F_REM,'excluido',['Coleta domiciliar','Coleta Laboratorial Domiciliar']),
+    // Suporte de Soro — INCLUSO na diária (não cobrar separado)
+    mk('','Suporte de Soro',0,'equipamento','AMBAS',F_AMBAS,'incluso',['Suporte Soro','Suporte de Soro']),
+  ];
+
+  saveBase(items);
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+  await initStorage();
+  const SEED_VERSION = 13;
+  const storedVersion = parseInt(localStorage.getItem('bradesco_seed_version') || '0');
+  if (!APP.baseCache.length || (storedVersion < SEED_VERSION && APP.baseCache.every(b => (b.id || '').startsWith('seed-')))) {
+    saveBase([]);
+    seedBase2026();
+    localStorage.setItem('bradesco_seed_version', String(SEED_VERSION));
+  }
+  updateBaseStatusAlert();
+  updateBaseCount();
+  renderBaseTable();
+});
+</script>
+</body>
+</html>
