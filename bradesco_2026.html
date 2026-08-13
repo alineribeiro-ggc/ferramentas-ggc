@@ -1263,7 +1263,16 @@ function switchTab(tab) {
   if(tab==='historico') renderHistory();
   if(tab==='rentabilidade'){
     const fr = document.getElementById('rent-frame');
-    if(fr && fr.src.indexOf('rentabilidade.html') < 0) fr.src = 'rentabilidade.html?embed=1';
+    if(fr && fr.src.indexOf('rentabilidade.html') < 0) {
+      fr.src = 'rentabilidade.html?embed=1';
+      fr.onload = async () => {
+        const entity = document.getElementById('entity-select').value;
+        const base = await loadBase(entity);
+        fr.contentWindow.OFFICIAL_BASE = base;
+        fr.contentWindow.OFFICIAL_CODE_MAP = SERVICE_CODE_MAP;
+        fr.contentWindow.OFFICIAL_MED_PRICES = MEDICATION_PRICES_SP;
+      };
+    }
   }
 }
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));

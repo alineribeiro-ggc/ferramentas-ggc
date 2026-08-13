@@ -218,6 +218,7 @@ tr.cat-red td{background:var(--red-bg)}
         <button class="pill f-neg" data-filter="negativos">Negativos</button>
         <button class="pill f-alert" data-filter="alertas">Alertas</button>
         <button class="pill f-pos" data-filter="positivos">Positivos</button>
+        <button class="pill" data-filter="divergentes" style="border-color:var(--red)">Divergentes</button>
         <span class="count" id="filter-count"></span>
       </div>
       <div class="tbl-wrap">
@@ -229,6 +230,7 @@ tr.cat-red td{background:var(--red-bg)}
               <th class="sortable" data-key="desc">Descrição<span class="arrow"></span></th>
               <th class="sortable num" data-key="custoUnit">Custo Unit.<span class="arrow"></span></th>
               <th class="sortable num" data-key="precoUnit">Preço Unit.<span class="arrow"></span></th>
+              <th class="sortable num" data-key="precoContrato">Preço Contrato<span class="arrow"></span></th>
               <th class="sortable num" data-key="desconto">Desc%<span class="arrow"></span></th>
               <th class="sortable num" data-key="qty">Qtd<span class="arrow"></span></th>
               <th class="sortable num" data-key="custoTotal">Custo Total<span class="arrow"></span></th>
@@ -298,7 +300,8 @@ let STATE = {
   analysis: {},
   sortKey: 'lucroR',
   sortDir: 'asc',
-  filter: 'todos'
+  filter: 'todos',
+  correction: null
 };
 
 /* ================================================================
@@ -860,6 +863,19 @@ function renderAnalysisHtml(a, kpis){
     parts.push('<h3>Sugestão para repactuação</h3><ul>' + sugestao.map(s => `<li>${s}</li>`).join('') + '</ul>');
   }
 
+  const corr = STATE.correction;
+  if(corr && corr.mismatches.length){
+    parts.push('<h3>Divergências com o contrato vigente</h3>');
+    parts.push(`<p>${corr.mismatches.length} item(ns) com preço diferente da base oficial. Receita corrigida: <span class="highlight">${fmtBRL(corr.receitaCorrigida)}</span> (diferença de <b>${fmtBRL(corr.diferencaReceita)}</b>).</p>`);
+    parts.push('<ul>');
+    for(const it of corr.mismatches.slice(0, 10)){
+      const diff = it.precoContrato - (it.precoUnit || 0);
+      parts.push(`<li>[${it.code}] ${it.desc || ''}: PDF ${fmtBRL(it.precoUnit)} → Contrato <b>${fmtBRL(it.precoContrato)}</b> (<span style="color:${diff>=0?'var(--green)':'var(--red)'}">diferença ${fmtBRL(diff)}</span>)</li>`);
+    }
+    if(corr.mismatches.length > 10) parts.push(`<li><i>… e mais ${corr.mismatches.length - 10} item(ns)</i></li>`);
+    parts.push('</ul>');
+  }
+
   return parts.join('\n');
 }
 
@@ -869,6 +885,33 @@ function renderAnalysisHtml(a, kpis){
 function kpiCardHtml(label, value, sub, bucket){
   const cls = bucket ? `kpi-${bucket}` : 'kpi-neutral';
   return `<div class="kpi-card ${cls}"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ''}</div>`;
+}
+
+function renderCorrectionBanner(){
+  let el = document.getElementById('correction-banner');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'correction-banner';
+    el.style.cssText = 'margin-bottom:16px';
+    const kpiRow = document.getElementById('kpi-row');
+    kpiRow.parentNode.insertBefore(el, kpiRow.nextSibling);
+  }
+  const c = STATE.correction;
+  if(!c || !c.mismatches.length){
+    if(!window.OFFICIAL_BASE || !window.OFFICIAL_BASE.length){
+      el.innerHTML = '<div style="background:#fff3e0;border:1.5px solid #a35b00;border-radius:8px;padding:12px 16px;font-size:13px;color:#a35b00"><b>Base oficial não carregada.</b> Acesse esta ferramenta pela aba "Rentabilidade" dentro do Corretor Bradesco para cruzar com o contrato vigente.</div>';
+    } else {
+      el.innerHTML = '<div style="background:#e8f5e9;border:1.5px solid #1e7d34;border-radius:8px;padding:12px 16px;font-size:13px;color:#1e7d34"><b>✓ Todos os preços conferem</b> com a base oficial do contrato vigente.</div>';
+    }
+    return;
+  }
+  const sinal = c.diferencaReceita >= 0 ? '+' : '';
+  el.innerHTML = `<div style="background:var(--red-bg);border:1.5px solid var(--red);border-radius:8px;padding:14px 18px;font-size:13px;line-height:1.7">
+    <b style="color:var(--red)">⚠ ${c.mismatches.length} item(ns) com preço diferente do contrato vigente</b><br>
+    Receita atual: <b>${fmtBRL(c.receitaOriginal)}</b> → Receita c/ preço contrato: <b>${fmtBRL(c.receitaCorrigida)}</b>
+    (<span style="font-weight:700;color:${c.diferencaReceita>=0?'var(--green)':'var(--red)'}">${sinal}${fmtBRL(c.diferencaReceita)}</span>)
+    ${c.notInBase.length ? `<br><span style="color:var(--grey)">${c.notInBase.length} item(ns) não encontrado(s) na base oficial.</span>` : ''}
+  </div>`;
 }
 
 function renderKpis(kpis){
@@ -912,6 +955,7 @@ function filterItems(items, filter){
     case 'negativos': return items.filter(i => i.lucroR !== null && i.lucroR < 0);
     case 'alertas': return items.filter(i => i.lucroR !== null && i.lucroR >= 0 && i.lucroPct !== null && i.lucroPct < 10);
     case 'positivos': return items.filter(i => i.lucroPct !== null && i.lucroPct >= 10);
+    case 'divergentes': return items.filter(i => i.precoContrato !== null && !i.priceMatch);
     default: return items;
   }
 }
@@ -935,9 +979,16 @@ function sortItems(items, key, dir){
 
 const ITEM_KEY_MAP = {
   category: 'category', code: 'code', desc: 'desc',
-  custoUnit: 'custoUnit', precoUnit: 'precoUnit', desconto: 'desconto', qty: 'qty',
+  custoUnit: 'custoUnit', precoUnit: 'precoUnit', precoContrato: 'precoContrato',
+  desconto: 'desconto', qty: 'qty',
   custoTotal: 'custoTotal', valor: 'valor', lucroR: 'lucroR', lucroPct: 'lucroPct'
 };
+
+function precoContratoCell(it){
+  if(it.precoContrato === null) return '<td class="num" style="color:#999">—</td>';
+  if(it.priceMatch) return `<td class="num" style="color:var(--green);font-weight:600">${fmtBRL(it.precoContrato)}</td>`;
+  return `<td class="num" style="color:var(--red);font-weight:700;background:var(--red-bg)">${fmtBRL(it.precoContrato)}</td>`;
+}
 
 function renderItemsTable(){
   const filtered = filterItems(STATE.items, STATE.filter);
@@ -952,6 +1003,7 @@ function renderItemsTable(){
       <td class="wrap">${it.desc || '(sem descrição)'}</td>
       <td class="num">${fmtBRL(it.custoUnit)}</td>
       <td class="num">${fmtBRL(it.precoUnit)}</td>
+      ${precoContratoCell(it)}
       <td class="num">${fmtPct(it.desconto)}</td>
       <td class="num">${fmtNum(it.qty)}</td>
       <td class="num">${fmtBRL(it.custoTotal)}</td>
@@ -1017,6 +1069,56 @@ function renderPatientHeader(header, itemCount){
 }
 
 /* ================================================================
+   CRUZAMENTO COM BASE OFICIAL DO CONTRATO (injetada pelo pai via iframe)
+   ================================================================ */
+function crossReferenceWithBase(items){
+  const base = window.OFFICIAL_BASE;
+  if(!base || !base.length) return;
+  const byCode = {};
+  for(const b of base) byCode[b.code] = b;
+
+  const codeMap = window.OFFICIAL_CODE_MAP || {};
+
+  for(const item of items){
+    let baseItem = byCode[item.code];
+    let mappedCode = null;
+
+    if(!baseItem && codeMap[item.code]){
+      mappedCode = codeMap[item.code].code;
+      baseItem = byCode[mappedCode];
+    }
+
+    if(baseItem){
+      item.precoContrato = baseItem.price;
+      item.descContrato = baseItem.desc;
+      item.catContrato = baseItem.cat;
+      item.codigoContrato = mappedCode || item.code;
+      item.priceMatch = Math.abs((item.precoUnit || 0) - baseItem.price) < 0.01;
+    } else {
+      item.precoContrato = null;
+      item.priceMatch = null;
+    }
+  }
+}
+
+function computeCorrectionSummary(items){
+  const mismatches = items.filter(i => i.precoContrato !== null && !i.priceMatch);
+  const notInBase = items.filter(i => i.precoContrato === null);
+  let receitaCorrigida = 0, receitaOriginal = 0;
+  for(const it of items){
+    receitaOriginal += (it.valor || 0);
+    if(it.precoContrato !== null && !it.priceMatch){
+      const newReceita = it.precoContrato * (1 - (it.desconto||0)/100) * (it.qty||1);
+      receitaCorrigida += newReceita;
+    } else {
+      receitaCorrigida += (it.valor || 0);
+    }
+  }
+  const diferencaReceita = receitaCorrigida - receitaOriginal;
+  return {mismatches, notInBase, receitaCorrigida, receitaOriginal, diferencaReceita};
+}
+
+/* ================================================================
    RENDER PRINCIPAL
    ================================================================ */
 function renderAll(parsed){
@@ -1024,6 +1126,10 @@ function renderAll(parsed){
   STATE.items = parsed.items;
   STATE.totalsSection = parsed.totalsSection;
   STATE.resumoFiscal = parsed.resumoFiscal;
+
+  crossReferenceWithBase(parsed.items);
+  STATE.correction = computeCorrectionSummary(parsed.items);
+
   STATE.categorias = aggregate(parsed.items);
   STATE.kpis = computeKpis(parsed.items, parsed.resumoFiscal);
   STATE.analysis = buildAnalysis(parsed.items, STATE.categorias, STATE.kpis);
@@ -1031,6 +1137,7 @@ function renderAll(parsed){
 
   renderPatientHeader(parsed.header, parsed.items.length);
   renderKpis(STATE.kpis);
+  renderCorrectionBanner();
   renderCategorias(STATE.categorias);
   renderItemsTable();
   renderResumoFiscal(parsed.resumoFiscal);
@@ -1178,6 +1285,34 @@ async function generateReportPdf(){
         didParseCell(d){ if(d.section==='body') d.cell.styles.textColor = REDC; }
       });
       y = doc.lastAutoTable.finalY + 14;
+    }
+
+    // ---- DIVERGÊNCIAS COM CONTRATO ----
+    const corr = STATE.correction;
+    if(corr && corr.mismatches.length){
+      if(y > 640){ doc.addPage(); y = MT; }
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.setFillColor(...BEIGE); doc.rect(ML, y, CW, 16, 'F'); doc.rect(ML, y, CW, 16);
+      doc.text(`Divergências com Contrato Vigente (${corr.mismatches.length} itens)`, ML+6, y+11);
+      y += 16;
+      doc.autoTable({
+        startY: y, margin:{left:ML, right:MR}, theme:'grid',
+        styles:{font:'helvetica', fontSize:7.5, cellPadding:3, lineColor:BLACKC, lineWidth:0.5, textColor:BLACKC},
+        head:[['Código','Descrição','Preço PDF','Preço Contrato','Diferença']],
+        headStyles:{fillColor:BEIGE, textColor:BLACKC, fontStyle:'bold', fontSize:7, halign:'center'},
+        columnStyles:{0:{cellWidth:CW*0.12},1:{cellWidth:CW*0.40,halign:'left'},2:{cellWidth:CW*0.16,halign:'right'},3:{cellWidth:CW*0.16,halign:'right'},4:{cellWidth:CW*0.16,halign:'right'}},
+        body: corr.mismatches.slice(0,20).map(it => [it.code, it.desc||'', fmtBRL(it.precoUnit), fmtBRL(it.precoContrato), fmtBRL(it.precoContrato - (it.precoUnit||0))]),
+        didParseCell(d){
+          if(d.section==='body' && d.column.index===4){
+            const val = corr.mismatches[d.row.index];
+            if(val) d.cell.styles.textColor = (val.precoContrato - (val.precoUnit||0)) >= 0 ? [30,125,52] : REDC;
+          }
+        }
+      });
+      y = doc.lastAutoTable.finalY + 6;
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text(`Receita atual: ${fmtBRL(corr.receitaOriginal)} → Receita c/ contrato: ${fmtBRL(corr.receitaCorrigida)} (${corr.diferencaReceita>=0?'+':''}${fmtBRL(corr.diferencaReceita)})`, ML, y+8);
+      y += 20;
     }
 
     // ---- RESUMO FISCAL ----
