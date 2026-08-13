@@ -186,6 +186,7 @@ table.data .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-s
   <button class="tab-btn active" data-tab="documento">Documento</button>
   <button class="tab-btn" data-tab="base">Base Oficial</button>
   <button class="tab-btn" data-tab="historico">Histórico</button>
+  <button class="tab-btn" data-tab="rentabilidade">Rentabilidade</button>
 </nav>
 
 <div class="main">
@@ -377,6 +378,11 @@ table.data .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-s
       <button class="btn btn-secondary" onclick="clearHistory()">🗑 Limpar Histórico</button>
     </div>
   </div>
+</div>
+
+<!-- ===================== TAB: RENTABILIDADE ===================== -->
+<div id="tab-rentabilidade" class="tab-content">
+  <iframe id="rent-frame" src="about:blank" style="width:100%;height:calc(100vh - 70px);border:none;border-radius:10px;background:#f0f0ee"></iframe>
 </div>
 
 </div><!-- .main -->
@@ -1255,6 +1261,10 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='tab-'+tab));
   if(tab==='base') renderBase();
   if(tab==='historico') renderHistory();
+  if(tab==='rentabilidade'){
+    const fr = document.getElementById('rent-frame');
+    if(fr && fr.src.indexOf('rentabilidade.html') < 0) fr.src = 'rentabilidade.html?embed=1';
+  }
 }
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
